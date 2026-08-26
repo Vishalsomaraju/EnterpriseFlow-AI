@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EnterpriseFlow AI Token Reference</title>
+  <link rel="stylesheet" href="enterpriseflow-ui.css">
+</head>
+<body class="reference-page">
+  <header class="page-topbar">
+    <div>
+      <p class="eyebrow">EnterpriseFlow AI</p>
+      <h1>Design System Reference</h1>
+    </div>
+    <a class="secondary-link" href="index.html">Back to overview</a>
+  </header>
+
+  <main class="reference-main">
+    <section class="intro-grid">
+      <article class="summary-card">
+        <p class="eyebrow">System</p>
+        <h2>Deployable enterprise software, not editorial AI and not neon dev tooling.</h2>
+        <p>
+          The shell is neutral and compact. Status colors carry meaning, mono is reserved for traceable artifacts,
+          and the signature motion is isolated to graph and impact surfaces where change propagation matters.
+        </p>
+      </article>
+      <article class="summary-card">
+        <p class="eyebrow">Usage rules</p>
+        <ul class="plain-list">
+          <li>Blue is the single product accent family across both themes.</li>
+          <li>Green means automated or passed.</li>
+          <li>Amber means waiting on a human or unresolved review.</li>
+          <li>Purple is reserved for IBM Bob activity and generated artifacts.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="token-section">
+      <div class="section-heading">
+        <p class="eyebrow">Color</p>
+        <h2>Theme tokens</h2>
+      </div>
+      <div class="token-columns">
+        <article class="token-panel light-theme-preview">
+          <div class="token-panel-head">
+            <h3>Light mode</h3>
+            <span class="pill info">Operator default</span>
+          </div>
+          <div class="token-list">
+            <div class="token-row"><span class="swatch" style="background:#F8F9FB"></span><code>#F8F9FB</code><strong>Canvas</strong><span>Primary workspace background</span></div>
+            <div class="token-row"><span class="swatch" style="background:#FFFFFF;border-color:#DDE3EC"></span><code>#FFFFFF</code><strong>Surface</strong><span>Cards, panes, tables, dialogs</span></div>
+            <div class="token-row"><span class="swatch" style="background:#DDE3EC"></span><code>#DDE3EC</code><strong>Border</strong><span>Hairline dividers and shell lines</span></div>
+            <div class="token-row"><span class="swatch" style="background:#1F2937"></span><code>#1F2937</code><strong>Text</strong><span>Page titles and core UI text</span></div>
+            <div class="token-row"><span class="swatch" style="background:#5B6B81"></span><code>#5B6B81</code><strong>Muted</strong><span>Labels, secondary context, inactive text</span></div>
+            <div class="token-row"><span class="swatch" style="background:#0F62FE"></span><code>#0F62FE</code><strong>Accent</strong><span>Primary actions and selected states</span></div>
+            <div class="token-row"><span class="swatch" style="background:#EEF4FF"></span><code>#EEF4FF</code><strong>Accent tint</strong><span>Selection fills and low-noise emphasis</span></div>
+          </div>
+        </article>
+
+        <article class="token-panel dark-theme-preview">
+          <div class="token-panel-head">
+            <h3>Dark mode</h3>
+            <span class="pill ai">Review + demo</span>
+          </div>
+          <div class="token-list">
+            <div class="token-row"><span class="swatch" style="background:#111827"></span><code>#111827</code><strong>Canvas</strong><span>Dark workspace background</span></div>
+            <div class="token-row"><span class="swatch" style="background:#1A2332"></span><code>#1A2332</code><strong>Surface</strong><span>Panes, cards, and inspectors</span></div>
+            <div class="token-row"><span class="swatch" style="background:#2A3446"></span><code>#2A3446</code><strong>Border</strong><span>Quiet panel separation</span></div>
+            <div class="token-row"><span class="swatch" style="background:#E7ECF3"></span><code>#E7ECF3</code><strong>Text</strong><span>Primary content and headings</span></div>
+            <div class="token-row"><span class="swatch" style="background:#97A3B6"></span><code>#97A3B6</code><strong>Muted</strong><span>Metadata and helper text</span></div>
+            <div class="token-row"><span class="swatch" style="background:#4589FF"></span><code>#4589FF</code><strong>Accent</strong><span>Primary actions and active graph lines</span></div>
+            <div class="token-row"><span class="swatch" style="background:#182B57"></span><code>#182B57</code><strong>Accent tint</strong><span>Selected fills and pinned contexts</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="token-section">
+      <div class="section-heading">
+        <p class="eyebrow">Semantic status</p>
+        <h2>Cross-theme meanings</h2>
+      </div>
+      <div class="status-grid">
+        <div class="status-card"><span class="pill info">Active</span><p><code>#0F62FE</code> / <code>#4589FF</code></p><small>Information, selected workflow, current stage</small></div>
+        <div class="status-card"><span class="pill success">Automated</span><p><code>#198038</code></p><small>Passed checks, automated nodes, successful runs</small></div>
+        <div class="status-card"><span class="pill warning">Waiting</span><p><code>#F1A208</code></p><small>Human review, pending approval, unresolved attention</small></div>
+        <div class="status-card"><span class="pill danger">Risk</span><p><code>#DA1E28</code></p><small>Validation failures, blocked integrations, rejected changes</small></div>
+        <div class="status-card"><span class="pill ai">IBM Bob</span><p><code>#8A3FFC</code></p><small>Planning, subagents, generated code/tests/docs</small></div>
+      </div>
+    </section>
+
+    <section class="token-section">
+      <div class="section-heading">
+        <p class="eyebrow">Type</p>
+        <h2>Dense hierarchy</h2>
+      </div>
+      <div class="type-scale">
+        <div class="type-row"><strong class="type-sample page-title">Page title / 28 / 700</strong><span>Main route headers, impact deltas, blueprint titles</span></div>
+        <div class="type-row"><strong class="type-sample section-title">Section header / 20 / 650</strong><span>Panel groups, canvas sections, inspectors</span></div>
+        <div class="type-row"><strong class="type-sample card-title">Card title / 15 / 650</strong><span>Cards, tables, status modules, workflow nodes</span></div>
+        <div class="type-row"><strong class="type-sample body-copy">Body / 13 / 500</strong><span>Default interface text at high density</span></div>
+        <div class="type-row"><strong class="type-sample label-copy">Label / 12 / 600</strong><span>Labels, captions, tabs, metadata</span></div>
+        <div class="type-row"><strong class="type-sample mono-copy">Mono / 12 / 600</strong><span>Rules, IDs, file counts, schema fragments, diffs</span></div>
+      </div>
+    </section>
+
+    <section class="token-section">
+      <div class="section-heading">
+        <p class="eyebrow">Spacing and elevation</p>
+        <h2>Compact shell rules</h2>
+      </div>
+      <div class="scale-grid">
+        <article class="summary-card">
+          <h3>Spacing scale</h3>
+          <p><code>4, 8, 12, 16, 20, 24, 32, 40, 56</code></p>
+          <small>Interface internals stay within 8-20. Page rhythm uses 24-56.</small>
+        </article>
+        <article class="summary-card">
+          <h3>Radius scale</h3>
+          <p><code>6px</code> controls, <code>8px</code> badges + rows, <code>10px</code> cards and panels</p>
+          <small>No soft consumer rounding. Keep corners disciplined.</small>
+        </article>
+        <article class="summary-card">
+          <h3>Elevation</h3>
+          <p><code>1px</code> borders first, shadows only for hover or overlay states.</p>
+          <small>Base shadow: <code>0 1px 2px rgba(16,24,40,0.04)</code></small>
+        </article>
+      </div>
+    </section>
+
+    <section class="token-section">
+      <div class="section-heading">
+        <p class="eyebrow">Reusable sample</p>
+        <h2>Shell components in both themes</h2>
+      </div>
+      <div class="sample-stack">
+        <div class="dual-sample">
+          <section class="sample-shell light-mode">
+            <aside class="mini-sidebar">
+              <div class="mini-brand">
+                <span class="brand-mark">EF</span>
+                <div>
+                  <strong>EnterpriseFlow</strong>
+                  <small>Invoice Approval</small>
+                </div>
+              </div>
+              <a class="mini-nav active" href="#">Workflow Graph</a>
+              <a class="mini-nav" href="#">Blueprint</a>
+              <a class="mini-nav" href="#">Review</a>
+            </aside>
+            <div class="sample-content">
+              <article class="sample-card">
+                <div class="sample-card-head">
+                  <div>
+                    <p class="eyebrow">Approval router</p>
+                    <h3>Threshold rule updated</h3>
+                  </div>
+                  <span class="pill warning">Needs review</span>
+                </div>
+                <p class="sample-copy">Invoices above <code>₹10,00,000</code> now require CFO approval. Downstream code, tests, and docs are flagged.</p>
+                <div class="sample-metrics">
+                  <span>3 files</span>
+                  <span>8 tests</span>
+                  <span>2 docs</span>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="sample-shell dark-mode dark-sample">
+            <aside class="mini-sidebar">
+              <div class="mini-brand">
+                <span class="brand-mark">EF</span>
+                <div>
+                  <strong>EnterpriseFlow</strong>
+                  <small>Invoice Approval</small>
+                </div>
+              </div>
+              <a class="mini-nav active" href="#">Workflow Graph</a>
+              <a class="mini-nav" href="#">Blueprint</a>
+              <a class="mini-nav" href="#">Review</a>
+            </aside>
+            <div class="sample-content">
+              <article class="sample-card">
+                <div class="sample-card-head">
+                  <div>
+                    <p class="eyebrow">IBM Bob activity</p>
+                    <h3>Implementation synchronized</h3>
+                  </div>
+                  <span class="pill ai">Subagents running</span>
+                </div>
+                <p class="sample-copy">Approval service, regression tests, and API docs are updating against the new approval threshold.</p>
+                <div class="sample-metrics">
+                  <span>14 files</span>
+                  <span>27 tests</span>
+                  <span>4 workstreams</span>
+                </div>
+              </article>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

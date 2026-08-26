@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EnterpriseFlow AI Workflow Graph</title>
+  <link rel="stylesheet" href="enterpriseflow-ui.css">
+</head>
+<body class="product-screen">
+  <div class="app-shell dark-mode">
+    <aside class="product-sidebar">
+      <div class="sidebar-brand-block">
+        <div class="brand-mark">EF</div>
+        <div>
+          <strong>EnterpriseFlow</strong>
+          <small>Invoice Approval</small>
+        </div>
+      </div>
+      <nav class="product-nav">
+        <a href="#" class="nav-item">Dashboard</a>
+        <a href="#" class="nav-item">Analysis</a>
+        <a href="#" class="nav-item active">Workflow Graph</a>
+        <a href="#" class="nav-item">Blueprint</a>
+        <a href="#" class="nav-item">Impact</a>
+      </nav>
+      <div class="nav-footer-card">
+        <p class="eyebrow">Selected node</p>
+        <strong id="selected-label">Approval Routing</strong>
+        <small id="selected-kind">Human checkpoint</small>
+      </div>
+    </aside>
+
+    <main class="product-main">
+      <header class="screen-topbar">
+        <div>
+          <p class="eyebrow">Workflow Graph</p>
+          <h1>Invoice Approval state machine</h1>
+        </div>
+        <div class="topbar-actions">
+          <span class="pill success">Blueprint synced</span>
+          <a class="primary-action" href="impact-analysis.html">View impact</a>
+        </div>
+      </header>
+
+      <section class="graph-layout">
+        <div class="graph-canvas-panel">
+          <div class="canvas-toolbar">
+            <span class="pill info">Live dependency view</span>
+            <div class="zoom-controls">
+              <button type="button">-</button>
+              <span>100%</span>
+              <button type="button">+</button>
+            </div>
+          </div>
+          <div class="workflow-canvas" id="workflow-canvas">
+            <svg class="graph-lines" viewBox="0 0 860 680" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path class="link link-base active-link route-link" d="M430 94V130" />
+              <path class="link link-base route-link" d="M430 190V226" />
+              <path class="link link-base route-link" d="M430 286V322" />
+              <path class="link link-base route-link" d="M430 382V418" />
+              <path class="link link-base route-link" d="M430 478V514" />
+              <path class="link link-base route-link manager-branch" d="M430 562C430 590 328 590 328 620" />
+              <path class="link link-base route-link cfo-branch" d="M430 562C430 590 532 590 532 620" />
+              <path class="link link-base downstream-link" d="M328 648C328 672 430 672 430 700" />
+              <path class="link link-base downstream-link" d="M532 648C532 672 430 672 430 700" />
+            </svg>
+
+            <button class="workflow-node automated" data-group="route-link" data-label="Invoice Received" data-kind="Automated intake" style="top:32px;left:320px;">
+              <span class="node-status success"></span>
+              <strong>Invoice Received</strong>
+              <small>Email + PDF captured</small>
+            </button>
+            <button class="workflow-node automated" data-group="route-link" data-label="Vendor Validation" data-kind="Automated validation" style="top:128px;left:320px;">
+              <span class="node-status success"></span>
+              <strong>Vendor Validation</strong>
+              <small>Vendor exists, active, not blocked</small>
+            </button>
+            <button class="workflow-node automated" data-group="route-link" data-label="Duplicate Check" data-kind="Automated validation" style="top:224px;left:320px;">
+              <span class="node-status success"></span>
+              <strong>Duplicate Check</strong>
+              <small>Invoice number + amount match</small>
+            </button>
+            <button class="workflow-node automated" data-group="route-link" data-label="PO Matching" data-kind="Automated validation" style="top:320px;left:320px;">
+              <span class="node-status success"></span>
+              <strong>PO Matching</strong>
+              <small>Purchase order lookup</small>
+            </button>
+            <button class="workflow-node automated" data-group="route-link" data-label="Amount Verification" data-kind="Automated validation" style="top:416px;left:320px;">
+              <span class="node-status success"></span>
+              <strong>Amount Verification</strong>
+              <small>Threshold and variance check</small>
+            </button>
+            <button class="workflow-node human selected" data-group="route-link manager-branch cfo-branch downstream-link" data-label="Approval Routing" data-kind="Human checkpoint" style="top:512px;left:320px;">
+              <span class="node-status warning"></span>
+              <strong>Approval Routing</strong>
+              <small>Finance manager or CFO</small>
+            </button>
+            <button class="workflow-node human" data-group="manager-branch downstream-link" data-label="Manager Approval" data-kind="Human approval" style="top:620px;left:206px;">
+              <span class="node-status warning"></span>
+              <strong>Manager Approval</strong>
+              <small>Under ₹10,00,000</small>
+            </button>
+            <button class="workflow-node human" data-group="cfo-branch downstream-link" data-label="CFO Approval" data-kind="Human approval" style="top:620px;left:434px;">
+              <span class="node-status warning"></span>
+              <strong>CFO Approval</strong>
+              <small>₹10,00,000 and above</small>
+            </button>
+            <button class="workflow-node automated" data-group="downstream-link" data-label="ERP Update" data-kind="Automated writeback" style="top:736px;left:320px;">
+              <span class="node-status success"></span>
+              <strong>ERP Update</strong>
+              <small>Record payment status</small>
+            </button>
+          </div>
+        </div>
+
+        <aside class="inspector-panel">
+          <div class="inspector-head">
+            <p class="eyebrow">Node inspector</p>
+            <h2 id="inspector-title">Approval Routing</h2>
+          </div>
+          <div class="inspector-block">
+            <span class="pill warning" id="inspector-badge">Human checkpoint</span>
+            <p class="inspector-text">This node is the live handoff boundary. The graph highlights everything downstream that changes when approval logic changes.</p>
+          </div>
+          <div class="inspector-block">
+            <p class="eyebrow">Rules enforced</p>
+            <ul class="rule-list" id="rule-list">
+              <li>Amounts below <code>₹10,00,000</code> route to Finance Manager.</li>
+              <li>Amounts at or above <code>₹10,00,000</code> route to CFO.</li>
+              <li>Every branch creates an auditable approval event.</li>
+            </ul>
+          </div>
+          <div class="inspector-block">
+            <p class="eyebrow">Observed effects</p>
+            <div class="effect-list">
+              <span>Workflow graph</span>
+              <span>Approval service</span>
+              <span>Regression tests</span>
+              <span>Reviewer checklist</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+  <script src="enterpriseflow-ui.js"></script>
+</body>
+</html>

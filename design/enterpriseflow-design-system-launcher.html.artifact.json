@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "EnterpriseFlow AI Design System Launcher",
+  "entry": "enterpriseflow-design-system-launcher.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-26T12:09:27.267Z",
+  "updatedAt": "2026-08-26T12:09:27.271Z",
+  "metadata": {
+    "identifier": "enterpriseflow-design-system-launcher",
+    "artifactType": "text/html",
+    "inferred": false
+  }
+}
