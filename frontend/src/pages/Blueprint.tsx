@@ -23,7 +23,7 @@ export function BlueprintPage() {
 
   if (isLoading) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="Automation Blueprint" title="Invoice Approval" />
         <LoadingState message="Loading blueprint rules..." />
       </PageContainer>
@@ -32,7 +32,7 @@ export function BlueprintPage() {
 
   if (error) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="Automation Blueprint" title="Invoice Approval" />
         <ErrorState error={error} message="Failed to load blueprint rules." />
       </PageContainer>
@@ -51,7 +51,7 @@ export function BlueprintPage() {
   const tabs = ['Overview', 'Workflow', 'Rules', 'Integrations', 'Approvals', 'Acceptance Criteria'];
 
   return (
-    <PageContainer>
+    <PageContainer variant="wide">
       <PageHeader 
         eyebrow="Automation Blueprint" 
         title="Invoice Approval"

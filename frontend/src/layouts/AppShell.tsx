@@ -6,9 +6,9 @@ export function AppShell() {
   return (
     <div className="app-shell light-mode">
       <Sidebar />
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+      <div className="app-main-column">
         <Topbar />
-        <main className="product-main" style={{ flex: 1 }}>
+        <main className="product-main">
           <Outlet />
         </main>
       </div>

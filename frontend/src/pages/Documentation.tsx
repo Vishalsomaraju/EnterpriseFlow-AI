@@ -12,7 +12,7 @@ export function DocumentationPage() {
 
   if (isLoading) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="Engineering Artifacts" title="API & Workflow Documentation" />
         <LoadingState message="Loading documentation..." />
       </PageContainer>
@@ -21,14 +21,14 @@ export function DocumentationPage() {
 
   if (error || !docs) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="Engineering Artifacts" title="API & Workflow Documentation" />
         <ErrorState error={error} message="Failed to load documentation." />
       </PageContainer>
     );
   }
   return (
-    <PageContainer>
+    <PageContainer variant="wide">
       <PageHeader 
         eyebrow="Engineering Artifacts" 
         title="API & Workflow Documentation"

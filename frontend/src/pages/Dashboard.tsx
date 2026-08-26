@@ -17,7 +17,7 @@ export function Dashboard() {
 
   if (statsLoading || projectsLoading || activityLoading) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="Workspace" title="Good Morning, EnterpriseFlow Admin" />
         <LoadingState message="Loading dashboard..." />
       </PageContainer>
@@ -26,7 +26,7 @@ export function Dashboard() {
 
   if (statsError || projectsError || activityError) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="Workspace" title="Good Morning, EnterpriseFlow Admin" />
         <ErrorState error={statsError || projectsError || activityError || 'Failed to load dashboard'} />
       </PageContainer>
@@ -34,7 +34,7 @@ export function Dashboard() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer variant="wide">
       <PageHeader 
         eyebrow="Workspace" 
         title="Good Morning, EnterpriseFlow Admin" 

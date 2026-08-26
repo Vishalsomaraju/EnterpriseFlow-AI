@@ -12,7 +12,7 @@ export function AuditTrailPage() {
   ];
 
   return (
-    <PageContainer>
+    <PageContainer variant="wide">
       <PageHeader eyebrow="Compliance & Security" title="Audit Trail" />
 
       <div style={{ maxWidth: '800px', margin: '32px auto' }}>

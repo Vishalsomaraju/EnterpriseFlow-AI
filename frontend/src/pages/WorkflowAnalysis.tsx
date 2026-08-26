@@ -7,7 +7,7 @@ import { PageContainer } from '../components/layout/PageContainer';
 
 export function WorkflowAnalysisPage() {
   return (
-    <PageContainer>
+    <PageContainer variant="wide">
       <PageHeader 
         eyebrow="Analyze" 
         title="Extraction Results"

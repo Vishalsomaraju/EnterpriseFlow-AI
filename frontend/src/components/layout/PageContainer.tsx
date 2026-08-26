@@ -1,23 +1,32 @@
 import type { ReactNode } from 'react';
 
+export type PageContainerVariant = 'normal' | 'narrow' | 'wide' | 'full';
+
 export function PageContainer({ 
   children, 
   style,
-  maxWidth = '1200px'
+  variant = 'normal'
 }: { 
   children: ReactNode;
   style?: React.CSSProperties;
-  maxWidth?: string | number;
+  variant?: PageContainerVariant;
 }) {
+  const maxWidths = {
+    normal: '1280px',
+    narrow: '900px',
+    wide: '1440px',
+    full: '100%'
+  };
+
   return (
-    <div style={{
+    <div className="page-container" style={{
       padding: '24px',
-      maxWidth,
-      margin: '0 auto',
+      width: '100%',
+      maxWidth: maxWidths[variant],
+      marginInline: 'auto',
       display: 'flex',
       flexDirection: 'column',
       gap: '32px',
-      width: '100%',
       boxSizing: 'border-box',
       ...style
     }}>

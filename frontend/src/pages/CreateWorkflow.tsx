@@ -17,7 +17,7 @@ export function CreateWorkflowPage() {
   };
 
   return (
-    <PageContainer>
+    <PageContainer variant="narrow">
       <PageHeader eyebrow="Workflows" title="Create New Workflow" />
       
       <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto' }}>

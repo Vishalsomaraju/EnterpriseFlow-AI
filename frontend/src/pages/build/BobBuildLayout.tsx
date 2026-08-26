@@ -13,7 +13,7 @@ export function BobBuildLayout() {
 
   if (isLoading) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="IBM Bob Engineering" title="Implementation Workspace" />
         <LoadingState message="Loading build environment..." />
       </PageContainer>
@@ -22,7 +22,7 @@ export function BobBuildLayout() {
 
   if (error || !build) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="IBM Bob Engineering" title="Implementation Workspace" />
         <ErrorState error={error} message="Failed to load build data." />
       </PageContainer>
@@ -36,7 +36,7 @@ export function BobBuildLayout() {
   ];
 
   return (
-    <PageContainer>
+    <PageContainer variant="wide">
       <PageHeader 
         eyebrow="IBM Bob Engineering" 
         title="Implementation Workspace"

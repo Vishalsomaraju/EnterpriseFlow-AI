@@ -13,7 +13,7 @@ export function WorkflowExecutionPage() {
 
   if (isLoading) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="Runtime Execution" title="Execution Details" />
         <LoadingState message="Loading execution state..." />
       </PageContainer>
@@ -22,7 +22,7 @@ export function WorkflowExecutionPage() {
 
   if (error || !execution) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="Runtime Execution" title="Execution Details" />
         <ErrorState error={error} message="Failed to load execution state." />
       </PageContainer>
@@ -30,7 +30,7 @@ export function WorkflowExecutionPage() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer variant="wide">
       <PageHeader 
         eyebrow="Runtime Execution" 
         title="INV-1043 — ₹8,10,000"

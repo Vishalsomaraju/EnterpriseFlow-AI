@@ -13,7 +13,7 @@ export function TestsPage() {
 
   if (isLoading) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="Validation" title="Test Execution" />
         <LoadingState message="Loading test results..." />
       </PageContainer>
@@ -22,7 +22,7 @@ export function TestsPage() {
 
   if (error) {
     return (
-      <PageContainer>
+      <PageContainer variant="wide">
         <PageHeader eyebrow="Validation" title="Test Execution" />
         <ErrorState error={error} message="Failed to load test results." />
       </PageContainer>
@@ -30,7 +30,7 @@ export function TestsPage() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer variant="wide">
       <PageHeader 
         eyebrow="Validation" 
         title="Test Execution"

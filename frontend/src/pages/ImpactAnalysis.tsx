@@ -49,7 +49,7 @@ export function ImpactAnalysisPage() {
 
   if (isLoading) {
     return (
-      <PageContainer>
+      <PageContainer variant="full">
         <PageHeader eyebrow="Impact Analysis" title="EnterpriseFlow Propagation Map" />
         <LoadingState message="Calculating change impact..." />
       </PageContainer>
@@ -58,7 +58,7 @@ export function ImpactAnalysisPage() {
 
   if (error || !impact) {
     return (
-      <PageContainer>
+      <PageContainer variant="full">
         <PageHeader eyebrow="Impact Analysis" title="EnterpriseFlow Propagation Map" />
         <ErrorState error={error} message="Failed to load impact analysis." />
       </PageContainer>
@@ -66,7 +66,7 @@ export function ImpactAnalysisPage() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer variant="full">
       <PageHeader 
         eyebrow="Impact Analysis" 
         title="EnterpriseFlow Propagation Map"

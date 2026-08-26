@@ -63,7 +63,7 @@ export function WorkflowGraphPage() {
   }, []);
 
   return (
-    <PageContainer>
+    <PageContainer variant="full">
       <PageHeader 
         eyebrow="Workflow Graph" 
         title="Invoice Approval state machine"
