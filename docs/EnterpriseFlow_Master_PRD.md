@@ -6,6 +6,10 @@ MVP SCOPE Invoice Approval workflow
 ENGINEERING PARTNER IBM Bob (Plan / Subagents / Agent)
 DOCUMENT STATUS Draft v1.0 — Hackathon PRD
 
+> [!IMPORTANT]
+> **Documentation Hierarchy Rule**
+> The Master PRD defines product scope and intended behavior. The architecture/API/schema documents define implementation contracts. No implementation document may silently change product scope; changes to scope must be reflected in the Master PRD.
+
 EnterpriseFlow AI — PRD From broken workflow to working software.
 Table of Contents
 1. Product in one sentence
@@ -55,19 +59,25 @@ documentation fi deployment.
 EnterpriseFlow tries to compress this chain into a single pipeline:
 Business requirement
 |
-EnterpriseFlow
+AI Interpretation
 |
-Workflow understanding
+Structured JSON Schema
 |
-Automation blueprint
+Deterministic Validator
+|
+Workflow Graph
+|
+Automation Blueprint
+|
+Implementation Plan
 |
 IBM Bob
 |
-Working software
+Real Codebase
 |
-Tests + documentation
+Tests + Security
 |
-Human approval
+Human Review
 The original concept explicitly frames the problem as fragmented workflows, plus the slow journey from
 business requirement fi design fi implementation fi testing fi deployment fi documentation.
 3 Why this is a legitimate problem
@@ -416,6 +426,80 @@ Confidential — Draft PRD Page 12
 
 EnterpriseFlow AI — PRD From broken workflow to working software.
 That is a much stronger demonstration of agentic software engineering than a single generated snippet.
+Confidential — D
+BUSINESS USER
+|
+"Our invoice process
+is too slow"
+|
+v
++-------------------+
+| EnterpriseFlow UI |
++---------+---------+
+|
+SOP / requirements
+|
+v
++------------------------+
+| AI Interpretation      |
+|                        |
+| Process extraction     |
+| Bottleneck detection   |
+| Decision extraction    |
++-----------+------------+
+|
+v
++------------------------+
+| Structured JSON Schema |
++-----------+------------+
+|
+v
++------------------------+
+| Deterministic Validator|
++-----------+------------+
+|
+v
++------------------------+
+| Workflow Graph         |
++-----------+------------+
+|
+v
++------------------------+
+| Automation Blueprint   |
++-----------+------------+
+|
+v
++------------------------+
+| Implementation Plan    |
++-----------+------------+
+|
+v
++-----------------+
+| IBM BOB         |
+|                 |
+| Plan            |
+| Agent           |
++--------+--------+
+|
+v
++-------------------+
+| Real Codebase     |
++---------+---------+
+|
++--------+--------+
+v                 v
+Tests             Security
+|                 |
++--------+--------+
+v
++-----------------+
+| Human Review    |
+|                 |
+| Approve/Reject  |
++--------+--------+
+|
+v
+Workflow Execution
 Confidential — Draft PRD Page 13
 
 EnterpriseFlow AI — PRD From broken workflow to working software.
@@ -817,32 +901,25 @@ Do not build:
 The original concept itself says to keep the MVP focused rather than attempting to automate every
 enterprise process.
 What you absolutely MUST build — if time becomes tight, prioritize in this order:
-Tier 1 — Non-negotiable
-1 Invoice workflow
-2 Workflow extraction
-3 Workflow graph
-4 Automation blueprint
-5 Real sample repository
-6 IBM Bob Plan
-7 IBM Bob Agent implementation
-8 Tests
-9 Business-rule change
-10 Human approval
-Tier 2
-1 Subagents
-2 Documentation generation
-Confidential — Draft PRD Page 25
-
-EnterpriseFlow AI — PRD From broken workflow to working software.
-3 Audit trail
-4 Before/after metrics
-Tier 3
-1 Beautiful dashboard
-2 Additional workflow types
-3 Advanced analytics
-4 Enterprise integrations
+Priority    Component    Importance
+P0    Invoice demo repository    Critical
+P0    Workflow extraction    Critical
+P0    Structured workflow schema    Critical
+P0    Workflow graph    Critical
+P0    Blueprint    Critical
+P0    Bob implementation    Critical
+P0    Tests    Critical
+P0    Rule engine    Critical
+P0    Rule -> code/test/doc dependency graph    Critical
+P0    Human approval    Critical
+P1    SecurePush    Strong differentiator
+P1    Audit trail    Good
+P1    Documentation generation    Good
+P2    Extra workflows    Skip
+P2    ERP integrations    Skip
+P2    Advanced analytics    Skip
 If Tier 1 works, you have a hackathon project.
-Confidential — Draft PRD Page 26
+Confidential — Draft PRD Page 25
 
 EnterpriseFlow AI — PRD From broken workflow to working software.
 34 What the video should show
@@ -866,7 +943,7 @@ Show before/after: 8 manual steps & 2 email handoffs vs. automated validation,
 160–175 sec
 automated routing, audit trail, human approval retained.
 Final 5 sec “EnterpriseFlow AI — From broken workflow to working software.”
-Confidential — Draft PRD Page 27
+Confidential — Draft PRD Page 26
 
 EnterpriseFlow AI — PRD From broken workflow to working software.
 35-
@@ -903,7 +980,7 @@ Updated code + tests + docs
 The original concept's strongest differentiator is precisely the translation from business language to a
 structured engineering artifact before Bob takes over.
 Final product definition
-Confidential — Draft PRD Page 28
+Confidential — Draft PRD Page 27
 
 EnterpriseFlow AI — PRD From broken workflow to working software.
 ENTERPRISEFLOW AI
@@ -912,8 +989,14 @@ ENTERPRISEFLOW AI
 |
 v
 +------------------+
-| Workflow Analyzer|
+| AI Interpretation|
 +---------+--------+
+|
+v
+STRUCTURED JSON
+|
+v
+DETERMINISTIC VALIDATION
 |
 v
 WORKFLOW GRAPH
@@ -921,21 +1004,17 @@ WORKFLOW GRAPH
 v
 AUTOMATION BLUEPRINT
 |
-+---------+---------+
-| |
-Rules Acceptance
-Criteria
-| |
-+---------+---------+
+v
+IMPLEMENTATION PLAN
 |
 v
 IBM BOB
 |
-+-------------+-------------+
-| | |
-PLAN SUBAGENTS AGENT
-| | |
-+-------------+-------------+
++-------------+
+|             |
+PLAN        AGENT
+|             |
++-------------+
 v
 REAL CODEBASE
 |

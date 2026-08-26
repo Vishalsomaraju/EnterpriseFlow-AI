@@ -184,19 +184,39 @@ Subheading — EnterpriseFlow transforms messy business processes into structure
 then uses IBM Bob to help turn those blueprints into tested, documented software.
 Buttons — [ Try EnterpriseFlow ] [ See how it works ]
 Hero visual — not a chatbot. Show the actual product pipeline:
-Business Requirement
-|
-v
-Workflow
-|
-v
-Automation Blueprint
-|
-v
-IBM Bob
-|
-v
-Working Software
+             SOP / Documents
+                    |
+                    v
+             AI Interpretation
+                    |
+                    v
+          Structured JSON Schema
+                    |
+                    v
+          Deterministic Validator
+                    |
+                    v
+             Workflow Graph
+                    |
+                    v
+          Automation Blueprint
+                    |
+                    v
+            Implementation Plan
+                    |
+                    v
+                 IBM Bob
+                    |
+                    v
+              Real Codebase
+                    |
+          +---------+---------+
+          v                   v
+        Tests              Security
+          |                   |
+          +---------+---------+
+                    v
+               Human Review
 Section 3 — Problem
 Headline — Business processes change faster than software.
 Confidential — Draft Frontend Spec Page 6
@@ -230,6 +250,9 @@ Important framing for the hackathon. Not: “EnterpriseFlow is powered by Bob.�
 translates business intent. IBM Bob helps engineers turn that intent into software.”
 EnterpriseFlow
 (business intelligence)
+|
+v
+Structured JSON / Deterministic Validation
 |
 v
 Automation Blueprint
@@ -754,15 +777,16 @@ BUSINESS RULE
 Rs 5L -> Rs 10L
 |
 v
-APPROVAL ROUTER
+WORKFLOW NODE
+(Approval Router)
 |
 +---------+---------+
-v v v
-CODE TESTS DOCS
-| | |
+v         v         v
+CODE    TESTS     DOCS
+|         |         |
 +---------+---------+
 v
-REVIEW
+HUMAN REVIEW
 41. Component — Build Pipeline
 Use this everywhere the workflow is progressing through build stages.
 Confidential — Draft Frontend Spec Page 27
