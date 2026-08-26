@@ -14,6 +14,8 @@ import { useWorkflowGraph } from '../hooks/queries';
 import { PageHeader } from '../components/PageHeader';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { PageContainer } from '../components/layout/PageContainer';
 import { Link } from 'react-router-dom';
 
 import { WorkflowNode } from '../components/nodes/WorkflowNode';
@@ -61,47 +63,47 @@ export function WorkflowGraphPage() {
   }, []);
 
   return (
-    <>
+    <PageContainer>
       <PageHeader 
         eyebrow="Workflow Graph" 
         title="Invoice Approval state machine"
         actions={
-          <>
-            <Badge variant="success">Schema validated</Badge>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <Badge status="COMPLETED">Schema validated</Badge>
             <Link to="/app/workflows/w_1043/impact">
               <Button>View impact</Button>
             </Link>
-          </>
+          </div>
         }
       />
 
-      <section className="validation-strip" style={{ marginTop: '20px' }}>
-        <article className="validation-card">
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: '20px' }}>
+        <Card>
           <p className="eyebrow">Extraction summary</p>
-          <strong>12 steps</strong>
-          <small>4 actors, 3 decisions, 5 business rules</small>
-        </article>
-        <article className="validation-card">
+          <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>12 steps</strong>
+          <small style={{ color: 'var(--muted)' }}>4 actors, 3 decisions, 5 business rules</small>
+        </Card>
+        <Card>
           <p className="eyebrow">Ambiguities</p>
-          <strong>2 flagged</strong>
-          <small>Threshold amount and missing PO exception confirmed by finance</small>
-        </article>
-        <article className="validation-card">
+          <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>2 flagged</strong>
+          <small style={{ color: 'var(--muted)' }}>Threshold amount and missing PO exception confirmed by finance</small>
+        </Card>
+        <Card>
           <p className="eyebrow">Structured schema</p>
-          <strong>workflow.invoice-approval.v1.4</strong>
-          <small>Validated before graph generation</small>
-        </article>
-        <article className="validation-card">
+          <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>workflow.invoice-approval.v1.4</strong>
+          <small style={{ color: 'var(--muted)' }}>Validated before graph generation</small>
+        </Card>
+        <Card>
           <p className="eyebrow">Rule engine</p>
-          <strong>Deterministic</strong>
-          <small>No downstream routing relies on prompt-time inference</small>
-        </article>
+          <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>Deterministic</strong>
+          <small style={{ color: 'var(--muted)' }}>No downstream routing relies on prompt-time inference</small>
+        </Card>
       </section>
 
       <section className="graph-layout" style={{ marginTop: '24px' }}>
         <div className="graph-canvas-panel dark-mode">
           <div className="canvas-toolbar">
-            <span className="pill info">Canonical dependency view</span>
+            <Badge status="DEFAULT">Canonical dependency view</Badge>
           </div>
           <div className="workflow-canvas" style={{ height: '680px', marginTop: '16px' }}>
             <ReactFlow
@@ -128,7 +130,7 @@ export function WorkflowGraphPage() {
                 <h2 id="inspector-title" style={{ margin: 0 }}>{(selectedNode.data as any).label}</h2>
               </div>
               <div className="inspector-block" style={{ marginBottom: '20px' }}>
-                <Badge variant={(selectedNode.data as any).type === 'human' ? 'warning' : 'success'}>
+                <Badge status={(selectedNode.data as any).type === 'human' ? 'WARNING' : 'COMPLETED'}>
                   {(selectedNode.data as any).kind}
                 </Badge>
                 <p className="inspector-text" style={{ marginTop: '12px', color: 'var(--dark-muted)' }}>
@@ -164,6 +166,6 @@ export function WorkflowGraphPage() {
           )}
         </aside>
       </section>
-    </>
+    </PageContainer>
   );
 }

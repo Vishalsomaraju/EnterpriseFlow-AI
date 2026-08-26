@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { PageHeader } from '../components/PageHeader';
+import { PageContainer } from '../components/layout/PageContainer';
+import { Card } from '../components/Card';
 
 export function ActivityPage() {
   const [filter, setFilter] = useState('All');
@@ -16,7 +18,7 @@ export function ActivityPage() {
   const filtered = filter === 'All' ? timeline : timeline.filter(t => t.type === filter);
 
   return (
-    <>
+    <PageContainer>
       <PageHeader eyebrow="Workspace" title="Global Activity" />
 
       <div style={{ display: 'flex', gap: '8px', margin: '24px 0' }}>
@@ -39,7 +41,7 @@ export function ActivityPage() {
         ))}
       </div>
 
-      <div className="validation-card" style={{ padding: '24px' }}>
+      <Card style={{ padding: '24px' }}>
         {filtered.map(item => (
           <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
             <div>
@@ -50,7 +52,7 @@ export function ActivityPage() {
           </div>
         ))}
         {filtered.length === 0 && <div style={{ color: 'var(--muted)', textAlign: 'center', padding: '40px' }}>No activity found.</div>}
-      </div>
-    </>
+      </Card>
+    </PageContainer>
   );
 }

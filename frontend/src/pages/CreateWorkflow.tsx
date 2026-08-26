@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/PageHeader';
 import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { PageContainer } from '../components/layout/PageContainer';
 
 export function CreateWorkflowPage() {
   const [name, setName] = useState('');
@@ -15,10 +17,10 @@ export function CreateWorkflowPage() {
   };
 
   return (
-    <>
+    <PageContainer>
       <PageHeader eyebrow="Workflows" title="Create New Workflow" />
       
-      <div style={{ maxWidth: '800px', margin: '40px auto' }}>
+      <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto' }}>
         
         {/* Step Indicator */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '40px', position: 'relative' }}>
@@ -40,38 +42,38 @@ export function CreateWorkflowPage() {
           ))}
         </div>
 
-        <div className="validation-card" style={{ padding: '32px' }}>
-          <div style={{ display: 'grid', gap: '24px' }}>
+        <Card padding="32px">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Workflow name</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Workflow name</label>
               <input 
                 type="text" 
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="e.g., Invoice Approval" 
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px' }}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', background: 'var(--bg)', color: 'var(--text)', boxSizing: 'border-box' }}
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Current process description</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Current process description</label>
               <textarea 
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder="Describe how this process is currently handled..." 
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', minHeight: '100px', resize: 'vertical' }}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', minHeight: '100px', resize: 'vertical', background: 'var(--bg)', color: 'var(--text)', boxSizing: 'border-box' }}
               />
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Supporting document upload</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Supporting document upload</label>
               <div style={{ 
                 border: '2px dashed var(--border)', 
                 borderRadius: 'var(--radius-md)', 
                 padding: '32px', 
                 textAlign: 'center',
-                background: 'var(--surface)'
+                background: 'color-mix(in srgb, var(--surface) 50%, var(--bg))'
               }}>
                 <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: 'var(--muted)' }}>Support PDF/DOCX format</p>
                 <input 
@@ -81,11 +83,12 @@ export function CreateWorkflowPage() {
                   style={{ display: 'none' }}
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                 />
-                <label htmlFor="file-upload">
-                  <span className="inline-flex items-center justify-center font-bold transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200 min-h-[38px] px-4 text-[13px] rounded-md cursor-pointer">
-                    {file ? file.name : 'Upload Document'}
-                  </span>
-                </label>
+                <Button 
+                  variant="secondary" 
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                >
+                  {file ? file.name : 'Upload Document'}
+                </Button>
               </div>
             </div>
 
@@ -95,8 +98,8 @@ export function CreateWorkflowPage() {
             <Button variant="ghost">Save Draft</Button>
             <Button onClick={handleAnalyze} disabled={!name && !file}>Analyze Workflow</Button>
           </div>
-        </div>
+        </Card>
       </div>
-    </>
+    </PageContainer>
   );
 }

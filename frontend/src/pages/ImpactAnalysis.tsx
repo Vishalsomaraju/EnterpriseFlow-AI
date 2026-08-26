@@ -6,6 +6,8 @@ import '@xyflow/react/dist/style.css';
 
 import { PageHeader } from '../components/PageHeader';
 import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { PageContainer } from '../components/layout/PageContainer';
 import { ImpactNode } from '../components/nodes/ImpactNode';
 import { WorkflowEdge } from '../components/edges/WorkflowEdge';
 import { useImpactAnalysis } from '../hooks/queries';
@@ -47,24 +49,24 @@ export function ImpactAnalysisPage() {
 
   if (isLoading) {
     return (
-      <>
+      <PageContainer>
         <PageHeader eyebrow="Impact Analysis" title="EnterpriseFlow Propagation Map" />
         <LoadingState message="Calculating change impact..." />
-      </>
+      </PageContainer>
     );
   }
 
   if (error || !impact) {
     return (
-      <>
+      <PageContainer>
         <PageHeader eyebrow="Impact Analysis" title="EnterpriseFlow Propagation Map" />
         <ErrorState error={error} message="Failed to load impact analysis." />
-      </>
+      </PageContainer>
     );
   }
 
   return (
-    <>
+    <PageContainer>
       <PageHeader 
         eyebrow="Impact Analysis" 
         title="EnterpriseFlow Propagation Map"
@@ -75,18 +77,18 @@ export function ImpactAnalysisPage() {
         }
       />
 
-      <section style={{ marginTop: '24px', marginBottom: '24px', display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
-        <div className="validation-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h2 style={{ fontSize: '16px', color: 'var(--muted)' }}>Business rule changed:</h2>
+      <section style={{ marginTop: '24px', marginBottom: '24px', display: 'flex', gap: '32px', alignItems: 'stretch' }}>
+        <Card style={{ flex: 1 }}>
+          <h2 style={{ fontSize: '16px', color: 'var(--muted)', margin: 0, marginBottom: '12px' }}>Business rule changed:</h2>
           <div style={{ fontSize: '24px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ color: 'var(--danger)' }}>₹5,00,000</span>
-            <span className="delta-arrow">→</span>
+            <span style={{ color: 'var(--muted)' }}>→</span>
             <span style={{ color: 'var(--success)' }}>₹10,00,000</span>
           </div>
-        </div>
+        </Card>
         
-        <div className="validation-card" style={{ flex: 2 }}>
-          <h2 style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '12px' }}>Affected components:</h2>
+        <Card style={{ flex: 2 }}>
+          <h2 style={{ fontSize: '14px', color: 'var(--muted)', margin: 0, marginBottom: '12px' }}>Affected components:</h2>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {['Approval Router', 'Approval Service', 'Workflow Graph', 'Tests', 'API Documentation'].map(item => (
               <span key={item} style={{ padding: '6px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: 500 }}>
@@ -94,7 +96,7 @@ export function ImpactAnalysisPage() {
               </span>
             ))}
           </div>
-        </div>
+        </Card>
       </section>
 
       <section style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '24px', height: '600px' }}>
@@ -116,12 +118,12 @@ export function ImpactAnalysisPage() {
           </ReactFlow>
         </div>
 
-        <div className="sidebar-shell" style={{ borderRadius: 'var(--radius-lg)' }}>
+        <Card>
           {selectedNodeData ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div>
                 <span style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Node Inspector</span>
-                <h3 style={{ fontSize: '20px', marginTop: '8px', color: 'var(--accent)' }}>{selectedNodeData.label}</h3>
+                <h3 style={{ fontSize: '20px', marginTop: '8px', color: 'var(--accent)', margin: 0 }}>{selectedNodeData.label}</h3>
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -139,7 +141,7 @@ export function ImpactAnalysisPage() {
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Source Dependency</label>
-                  <div style={{ fontSize: '14px', padding: '4px 8px', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: '4px', display: 'inline-block' }}>{selectedNodeData.dependency}</div>
+                  <div style={{ fontSize: '14px', padding: '4px 8px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', display: 'inline-block' }}>{selectedNodeData.dependency}</div>
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Affected Status</label>
@@ -154,8 +156,8 @@ export function ImpactAnalysisPage() {
               Select a node in the graph<br/>to view propagation impact
             </div>
           )}
-        </div>
+        </Card>
       </section>
-    </>
+    </PageContainer>
   );
 }

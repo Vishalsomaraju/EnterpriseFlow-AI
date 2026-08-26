@@ -1,6 +1,7 @@
-
 import { PageHeader } from '../components/PageHeader';
 import { Badge } from '../components/Badge';
+import { Card } from '../components/Card';
+import { PageContainer } from '../components/layout/PageContainer';
 import { useTests } from '../hooks/queries';
 import { TestResult } from '../components/build/TestResult';
 import { LoadingState, ErrorState } from '../components/States';
@@ -12,28 +13,28 @@ export function TestsPage() {
 
   if (isLoading) {
     return (
-      <>
+      <PageContainer>
         <PageHeader eyebrow="Validation" title="Test Execution" />
         <LoadingState message="Loading test results..." />
-      </>
+      </PageContainer>
     );
   }
 
   if (error) {
     return (
-      <>
+      <PageContainer>
         <PageHeader eyebrow="Validation" title="Test Execution" />
         <ErrorState error={error} message="Failed to load test results." />
-      </>
+      </PageContainer>
     );
   }
 
   return (
-    <>
+    <PageContainer>
       <PageHeader 
         eyebrow="Validation" 
         title="Test Execution"
-        actions={<Badge variant="success">Tests Passed</Badge>}
+        actions={<Badge status="COMPLETED">Tests Passed</Badge>}
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px', marginTop: '24px' }}>
@@ -46,14 +47,14 @@ export function TestsPage() {
         </main>
         
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div className="validation-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
-            <h1 style={{ fontSize: '36px', color: 'var(--success)' }}>{totalDisplay} / {totalDisplay}</h1>
-            <p style={{ color: 'var(--muted)', marginTop: '8px' }}>Tests Passed</p>
-          </div>
+          <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+            <h1 style={{ fontSize: '36px', color: 'var(--success)', margin: 0 }}>{totalDisplay} / {totalDisplay}</h1>
+            <p style={{ color: 'var(--muted)', marginTop: '8px', margin: 0 }}>Tests Passed</p>
+          </Card>
 
-          <div className="summary-card">
-            <h3 style={{ fontSize: '15px', marginBottom: '12px' }}>Coverage Details</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+          <Card>
+            <h3 style={{ fontSize: '15px', marginBottom: '12px', margin: 0 }}>Coverage Details</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px', marginTop: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--muted)' }}>Branch Coverage</span>
                 <strong>94%</strong>
@@ -67,9 +68,9 @@ export function TestsPage() {
                 <strong>97%</strong>
               </div>
             </div>
-          </div>
+          </Card>
         </aside>
       </div>
-    </>
+    </PageContainer>
   );
 }

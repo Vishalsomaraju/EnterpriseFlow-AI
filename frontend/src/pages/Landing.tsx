@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
+import { Card } from '../components/Card';
 import { ArrowRight, ArrowDown, ShieldCheck, GitMerge, Settings, Play } from 'lucide-react';
 
 export function Landing() {
@@ -54,29 +55,29 @@ export function Landing() {
 
           {/* Hero Visual Block Diagram */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '32px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <div className="status-card" style={{ padding: '16px 24px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-              <strong style={{ fontSize: '14px' }}>Business Requirement</strong>
-            </div>
+            <Card style={{ padding: '16px 24px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+              <strong style={{ fontSize: '14px', margin: 0 }}>Business Requirement</strong>
+            </Card>
             <ArrowRight size={20} color="var(--muted)" />
             
-            <div className="status-card" style={{ padding: '16px 24px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-              <strong style={{ fontSize: '14px' }}>Workflow</strong>
-            </div>
+            <Card style={{ padding: '16px 24px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+              <strong style={{ fontSize: '14px', margin: 0 }}>Workflow</strong>
+            </Card>
             <ArrowRight size={20} color="var(--muted)" />
 
-            <div className="status-card" style={{ padding: '16px 24px', background: 'var(--accent-tint)', border: '1px solid var(--accent)', color: 'var(--accent)', borderRadius: 'var(--radius-md)' }}>
-              <strong style={{ fontSize: '14px' }}>Automation Blueprint</strong>
-            </div>
+            <Card style={{ padding: '16px 24px', background: 'var(--accent-tint)', border: '1px solid var(--accent)', color: 'var(--accent)', borderRadius: 'var(--radius-md)' }}>
+              <strong style={{ fontSize: '14px', margin: 0 }}>Automation Blueprint</strong>
+            </Card>
             <ArrowRight size={20} color="var(--muted)" />
 
-            <div className="status-card" style={{ padding: '16px 24px', background: 'var(--ai-tint)', border: '1px solid var(--ai)', color: 'var(--ai)', borderRadius: 'var(--radius-md)' }}>
-              <strong style={{ fontSize: '14px' }}>IBM Bob</strong>
-            </div>
+            <Card style={{ padding: '16px 24px', background: 'var(--ai-tint)', border: '1px solid var(--ai)', color: 'var(--ai)', borderRadius: 'var(--radius-md)' }}>
+              <strong style={{ fontSize: '14px', margin: 0 }}>IBM Bob</strong>
+            </Card>
             <ArrowRight size={20} color="var(--muted)" />
 
-            <div className="status-card" style={{ padding: '16px 24px', background: 'var(--success-tint)', border: '1px solid var(--success)', color: 'var(--success)', borderRadius: 'var(--radius-md)' }}>
-              <strong style={{ fontSize: '14px' }}>Working Software</strong>
-            </div>
+            <Card style={{ padding: '16px 24px', background: 'var(--success-tint)', border: '1px solid var(--success)', color: 'var(--success)', borderRadius: 'var(--radius-md)' }}>
+              <strong style={{ fontSize: '14px', margin: 0 }}>Working Software</strong>
+            </Card>
           </div>
         </section>
 
@@ -87,7 +88,7 @@ export function Landing() {
             <h2 style={{ fontSize: '32px', letterSpacing: '-0.02em', margin: '0 0 16px 0', lineHeight: 1.2 }}>
               Business processes change faster than software.
             </h2>
-            <p className="hero-copy" style={{ fontSize: '15px' }}>
+            <p className="hero-copy" style={{ fontSize: '15px', margin: 0 }}>
               When a policy changes, engineering is typically the bottleneck. 
               The result is a fragile patchwork of manual steps and disconnected tools. 
               EnterpriseFlow replaces this entropy with a deterministic engine that maps requirements directly to code.
@@ -95,21 +96,21 @@ export function Landing() {
           </div>
 
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)', padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-            <div className="validation-card" style={{ width: '100%', textAlign: 'center', borderColor: 'var(--danger)', background: 'var(--danger-tint)', color: 'var(--danger)' }}>
-              <strong>Email</strong>
-            </div>
+            <Card style={{ width: '100%', textAlign: 'center', borderColor: 'var(--danger)', background: 'var(--danger-tint)', color: 'var(--danger)' }}>
+              <strong style={{ margin: 0 }}>Email</strong>
+            </Card>
             <ArrowDown size={20} color="var(--muted)" />
-            <div className="validation-card" style={{ width: '100%', textAlign: 'center', borderColor: 'var(--danger)', background: 'var(--danger-tint)', color: 'var(--danger)' }}>
-              <strong>Spreadsheet</strong>
-            </div>
+            <Card style={{ width: '100%', textAlign: 'center', borderColor: 'var(--danger)', background: 'var(--danger-tint)', color: 'var(--danger)' }}>
+              <strong style={{ margin: 0 }}>Spreadsheet</strong>
+            </Card>
             <ArrowDown size={20} color="var(--muted)" />
-            <div className="validation-card" style={{ width: '100%', textAlign: 'center', borderColor: 'var(--danger)', background: 'var(--danger-tint)', color: 'var(--danger)' }}>
-              <strong>Manual verification</strong>
-            </div>
+            <Card style={{ width: '100%', textAlign: 'center', borderColor: 'var(--danger)', background: 'var(--danger-tint)', color: 'var(--danger)' }}>
+              <strong style={{ margin: 0 }}>Manual verification</strong>
+            </Card>
             <ArrowDown size={20} color="var(--muted)" />
-            <div className="validation-card" style={{ width: '100%', textAlign: 'center', borderColor: 'var(--danger)', background: 'var(--danger-tint)', color: 'var(--danger)' }}>
-              <strong>Manager email</strong>
-            </div>
+            <Card style={{ width: '100%', textAlign: 'center', borderColor: 'var(--danger)', background: 'var(--danger-tint)', color: 'var(--danger)' }}>
+              <strong style={{ margin: 0 }}>Manager email</strong>
+            </Card>
           </div>
         </section>
 
@@ -121,27 +122,27 @@ export function Landing() {
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-            <div className="summary-card">
+            <Card>
               <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--accent-tint)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
                 <GitMerge size={20} />
               </div>
               <h3 style={{ fontSize: '18px', margin: '0 0 12px 0' }}>1. Map the process</h3>
-              <p style={{ margin: 0 }}>Upload your existing documentation or describe the process. EnterpriseFlow extracts a canonical state machine.</p>
-            </div>
-            <div className="summary-card">
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted)', lineHeight: 1.5 }}>Upload your existing documentation or describe the process. EnterpriseFlow extracts a canonical state machine.</p>
+            </Card>
+            <Card>
               <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--ai-tint)', color: 'var(--ai)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
                 <Settings size={20} />
               </div>
               <h3 style={{ fontSize: '18px', margin: '0 0 12px 0' }}>2. Build with Bob</h3>
-              <p style={{ margin: 0 }}>The Automation Blueprint is sent to IBM Bob, our engineering agent, who writes the actual implementation code.</p>
-            </div>
-            <div className="summary-card">
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted)', lineHeight: 1.5 }}>The Automation Blueprint is sent to IBM Bob, our engineering agent, who writes the actual implementation code.</p>
+            </Card>
+            <Card>
               <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--success-tint)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
                 <ShieldCheck size={20} />
               </div>
               <h3 style={{ fontSize: '18px', margin: '0 0 12px 0' }}>3. Validate & Run</h3>
-              <p style={{ margin: 0 }}>Security tests, unit tests, and API documentation are generated. Once approved, the workflow is live.</p>
-            </div>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted)', lineHeight: 1.5 }}>Security tests, unit tests, and API documentation are generated. Once approved, the workflow is live.</p>
+            </Card>
           </div>
         </section>
 
@@ -169,22 +170,22 @@ export function Landing() {
 
         {/* Rule Change Demo / Impact Analysis */}
         <section id="impact" style={{ maxWidth: '1100px', width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', alignItems: 'center' }}>
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '32px', position: 'relative', boxShadow: 'var(--shadow-md)' }}>
+          <Card style={{ padding: '32px', position: 'relative' }}>
              <div style={{ position: 'absolute', top: '-14px', left: '32px', background: 'var(--warning-tint)', color: '#9c6400', padding: '4px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, border: '1px solid var(--warning)' }}>Change Detected</div>
              <h3 style={{ fontSize: '18px', margin: '16px 0 24px 0', display: 'flex', alignItems: 'center' }}>Approval Threshold: <span style={{ textDecoration: 'line-through', color: 'var(--muted)', marginLeft: '8px' }}>₹5,00,000</span> <ArrowRight size={14} style={{ margin: '0 8px' }} /> <span style={{ color: 'var(--accent)' }}>₹10,00,000</span></h3>
-             <p className="eyebrow">Impact Analysis</p>
+             <p className="eyebrow" style={{ margin: 0 }}>Impact Analysis</p>
              <ul style={{ margin: '12px 0 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text)' }}><ShieldCheck size={16} color="var(--success)" /> Approval Router modified</li>
                <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text)' }}><ShieldCheck size={16} color="var(--success)" /> CFO Route Tests updated</li>
                <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text)' }}><ShieldCheck size={16} color="var(--success)" /> API Documentation synced</li>
              </ul>
-          </div>
+          </Card>
           <div>
             <p className="eyebrow">Impact Analysis</p>
             <h2 style={{ fontSize: '32px', letterSpacing: '-0.02em', margin: '0 0 16px 0', lineHeight: 1.2 }}>
               Change a rule, update the system.
             </h2>
-            <p className="hero-copy" style={{ fontSize: '15px' }}>
+            <p className="hero-copy" style={{ fontSize: '15px', margin: 0 }}>
               When business rules change, you don't need a 3-month engineering sprint. 
               EnterpriseFlow maps the exact dependency graph. Bob updates the affected services, rewrites the tests, and syncs the documentation automatically.
             </p>

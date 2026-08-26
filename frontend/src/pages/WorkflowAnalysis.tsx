@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/PageHeader';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { PageContainer } from '../components/layout/PageContainer';
 
 export function WorkflowAnalysisPage() {
   return (
-    <>
+    <PageContainer>
       <PageHeader 
         eyebrow="Analyze" 
         title="Extraction Results"
@@ -19,8 +21,8 @@ export function WorkflowAnalysisPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginTop: '24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          <div className="validation-card">
-            <h3 style={{ fontSize: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px' }}>Actors Identified</h3>
+          <Card padding="24px">
+            <h3 style={{ fontSize: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px', margin: 0 }}>Actors Identified</h3>
             <ul style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: 0, padding: 0, listStyle: 'none' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
@@ -35,19 +37,19 @@ export function WorkflowAnalysisPage() {
                 <strong>CFO</strong>
               </li>
             </ul>
-          </div>
+          </Card>
 
-          <div className="validation-card">
-            <h3 style={{ fontSize: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px' }}>Systems Touched</h3>
+          <Card padding="24px">
+            <h3 style={{ fontSize: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px', margin: 0 }}>Systems Touched</h3>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <Badge variant="info">Email</Badge>
-              <Badge variant="info">PO System</Badge>
-              <Badge variant="info">ERP</Badge>
+              <Badge status="DEFAULT">Email</Badge>
+              <Badge status="DEFAULT">PO System</Badge>
+              <Badge status="DEFAULT">ERP</Badge>
             </div>
-          </div>
+          </Card>
 
-          <div className="validation-card">
-            <h3 style={{ fontSize: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px', color: 'var(--danger)' }}>Bottlenecks Detected</h3>
+          <Card padding="24px">
+            <h3 style={{ fontSize: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px', margin: 0, color: 'var(--danger)' }}>Bottlenecks Detected</h3>
             <ul style={{ display: 'flex', flexDirection: 'column', gap: '16px', margin: 0, padding: 0, listStyle: 'none' }}>
               <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                 <span className="status-dot warning" style={{ marginTop: '6px' }} />
@@ -71,12 +73,12 @@ export function WorkflowAnalysisPage() {
                 </div>
               </li>
             </ul>
-          </div>
+          </Card>
 
         </div>
 
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div className="summary-card">
+          <Card padding="24px">
             <p className="eyebrow">Summary Statistics</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
@@ -96,9 +98,9 @@ export function WorkflowAnalysisPage() {
                 <strong>2</strong>
               </div>
             </div>
-          </div>
+          </Card>
         </aside>
       </div>
-    </>
+    </PageContainer>
   );
 }

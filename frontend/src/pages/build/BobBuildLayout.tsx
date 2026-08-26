@@ -1,8 +1,8 @@
-
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
+import { PageContainer } from '../../components/layout/PageContainer';
 import { BuildStatus } from '../../components/build/BuildStatus';
 import { useBuildOverview } from '../../hooks/queries';
 import { LoadingState, ErrorState } from '../../components/States';
@@ -13,19 +13,19 @@ export function BobBuildLayout() {
 
   if (isLoading) {
     return (
-      <>
+      <PageContainer>
         <PageHeader eyebrow="IBM Bob Engineering" title="Implementation Workspace" />
         <LoadingState message="Loading build environment..." />
-      </>
+      </PageContainer>
     );
   }
 
   if (error || !build) {
     return (
-      <>
+      <PageContainer>
         <PageHeader eyebrow="IBM Bob Engineering" title="Implementation Workspace" />
         <ErrorState error={error} message="Failed to load build data." />
-      </>
+      </PageContainer>
     );
   }
 
@@ -36,13 +36,13 @@ export function BobBuildLayout() {
   ];
 
   return (
-    <>
+    <PageContainer>
       <PageHeader 
         eyebrow="IBM Bob Engineering" 
         title="Implementation Workspace"
         actions={
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <Badge variant="ai">Bob active</Badge>
+            <Badge status="ACTIVE">Bob active</Badge>
             <BuildStatus status={build.status} />
             <Link to={`/app/workflows/${build.workflowId}/review`}>
               <Button disabled={build.status !== 'COMPLETED'}>Proceed to Review</Button>
@@ -54,7 +54,7 @@ export function BobBuildLayout() {
       <div style={{ borderBottom: '1px solid var(--border)', marginTop: '24px' }}>
         <div style={{ display: 'flex', gap: '32px' }}>
           {tabs.map(tab => {
-            const isActive = location.pathname === tab.path;
+            const isActive = location.pathname === tab.path || (location.pathname === `/app/workflows/${build.workflowId}/build/` && tab.label === 'Overview');
             return (
               <Link 
                 key={tab.path}
@@ -78,6 +78,6 @@ export function BobBuildLayout() {
       <div style={{ marginTop: '32px' }}>
         <Outlet context={{ build }} />
       </div>
-    </>
+    </PageContainer>
   );
 }
