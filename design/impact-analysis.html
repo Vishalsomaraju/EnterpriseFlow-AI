@@ -17,15 +17,16 @@
         </div>
       </div>
       <nav class="product-nav">
-        <a href="#" class="nav-item">Dashboard</a>
+        <a href="#" class="nav-item">Extraction Review</a>
+        <a href="workflow-graph.html" class="nav-item">Workflow Graph</a>
         <a href="#" class="nav-item">Blueprint</a>
+        <a href="#" class="nav-item">Build Review</a>
         <a href="#" class="nav-item active">Impact Analysis</a>
-        <a href="#" class="nav-item">Review</a>
       </nav>
       <div class="nav-footer-card light">
-        <p class="eyebrow">Business rule delta</p>
-        <strong>₹5,00,000 → ₹10,00,000</strong>
-        <small>Finance manager ceiling changed</small>
+        <p class="eyebrow">Impact job</p>
+        <strong>R-001 threshold change</strong>
+        <small>Traversed from WorkflowGraph, not re-inferred by an LLM</small>
       </div>
     </aside>
 
@@ -33,7 +34,7 @@
       <header class="screen-topbar light">
         <div>
           <p class="eyebrow">Impact Analysis</p>
-          <h1>Approval threshold updated across the stack</h1>
+          <h1>Approval threshold updated through deterministic dependency traversal</h1>
         </div>
         <div class="topbar-actions">
           <span class="pill info">1 rule changed</span>
@@ -48,8 +49,8 @@
           <span class="delta-new">₹10,00,000</span>
         </div>
         <p class="impact-copy">
-          The ripple is isolated to approval logic. Visual emphasis comes from the cascade itself:
-          rule, workflow, code, tests, docs, and final human review.
+          The ripple is isolated to approval logic. EnterpriseFlow traverses the canonical graph and
+          emits fixed engineering work: rule, workflow node, code, tests, docs, security, and final human review.
         </p>
       </section>
 
@@ -57,14 +58,14 @@
         <div class="impact-column">
           <div class="impact-node root ripple-hot">
             <span class="pill info">Business rule</span>
-            <h2>Approval threshold</h2>
-            <p>Invoices above <code>₹10,00,000</code> now require CFO approval.</p>
+            <h2>R-001 Manager approval threshold</h2>
+            <p>Threshold moved from <code>₹5,00,000</code> to <code>₹10,00,000</code> after finance review confirmed the new policy.</p>
           </div>
           <div class="impact-link active"></div>
           <div class="impact-node ripple-hot">
-            <span class="pill warning">Workflow</span>
-            <h2>Approval Route</h2>
-            <p>Manager path expands. CFO path becomes a higher-threshold exception.</p>
+            <span class="pill warning">WorkflowGraph node</span>
+            <h2>W-07 Approval Router</h2>
+            <p>Manager path expands. CFO path becomes a higher-threshold exception derived from the deterministic rule engine.</p>
           </div>
           <div class="impact-branch">
             <div class="impact-branch-column">
@@ -80,7 +81,7 @@
               <div class="impact-node small ripple-warm">
                 <span class="pill success">Tests</span>
                 <h3>8 tests</h3>
-                <p>Boundary, regression, manager-route, CFO-route, audit assertions.</p>
+                <p>Boundary, regression, manager-route, CFO-route, and deterministic threshold assertions.</p>
               </div>
             </div>
             <div class="impact-branch-column">
@@ -91,26 +92,44 @@
                 <p>Approval policy and invoice workflow runbook require updates.</p>
               </div>
             </div>
+            <div class="impact-branch-column">
+              <div class="impact-link branch active"></div>
+              <div class="impact-node small ripple-warm">
+                <span class="pill danger">Security</span>
+                <h3>1 gate</h3>
+                <p>Policy diff and permission path rechecked before merge.</p>
+              </div>
+            </div>
           </div>
           <div class="impact-link active"></div>
           <div class="impact-node final ripple-review">
             <span class="pill warning">Human review</span>
             <h2>Ready for approval</h2>
-            <p>27 tests pass. Workflow delta is visible. Final deployment remains a human decision.</p>
+            <p>27 tests pass. Impact set is explicit. Bob can implement the change, but final deployment remains a human decision.</p>
           </div>
         </div>
       </section>
 
       <section class="impact-footnote-grid">
         <article class="summary-card">
-          <p class="eyebrow">Judge-facing clarity</p>
-          <h3>Why the ripple matters</h3>
-          <p>It proves the product understands consequences, not just code generation. One business change becomes traceable engineering work.</p>
+          <p class="eyebrow">Deterministic record</p>
+          <h3>Impact detected</h3>
+          <p>1 workflow node, 3 source files, 8 tests, 2 documentation references, 1 security gate. Risk: Medium.</p>
         </article>
         <article class="summary-card">
           <p class="eyebrow">Affected demo invoice</p>
           <h3><code>INV-1043</code> re-routed</h3>
           <p>At <code>₹8,10,000</code>, the invoice now routes to Finance Manager instead of CFO under the new threshold.</p>
+        </article>
+        <article class="summary-card">
+          <p class="eyebrow">Bob evidence</p>
+          <h3><a href="../BOB.md">Open implementation log</a></h3>
+          <p>The repo now carries a dedicated Bob contribution record so judges can inspect generated tasks, files, and validation results.</p>
+        </article>
+        <article class="summary-card">
+          <p class="eyebrow">Failure paths</p>
+          <h3>Visible non-happy states</h3>
+          <p>Extraction failure, blueprint validation failure, Bob test failure, and human rejection are all treated as product states, not edge cases.</p>
         </article>
       </section>
     </main>

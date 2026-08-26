@@ -26,12 +26,12 @@
         </p>
       </article>
       <article class="summary-card">
-        <p class="eyebrow">Usage rules</p>
+        <p class="eyebrow">Architecture rules</p>
         <ul class="plain-list">
-          <li>Blue is the single product accent family across both themes.</li>
-          <li>Green means automated or passed.</li>
-          <li>Amber means waiting on a human or unresolved review.</li>
-          <li>Purple is reserved for IBM Bob activity and generated artifacts.</li>
+          <li>AI interprets SOPs and proposes structure; validators and rule execution stay deterministic.</li>
+          <li>WorkflowGraph is the canonical source of truth for blueprint, tests, docs, and impact traversal.</li>
+          <li>Bob is shown as an engineering workspace step with evidence, not as a fake runtime API.</li>
+          <li>Purple is reserved for IBM Bob activity and generated artifacts only.</li>
         </ul>
       </article>
     </section>
@@ -125,6 +125,11 @@
           <h3>Elevation</h3>
           <p><code>1px</code> borders first, shadows only for hover or overlay states.</p>
           <small>Base shadow: <code>0 1px 2px rgba(16,24,40,0.04)</code></small>
+        </article>
+        <article class="summary-card">
+          <h3>Demo trust rule</h3>
+          <p>Always surface ambiguity, validation, failure paths, and traceability before implementation claims.</p>
+          <small>The frontend should make the deterministic boundary obvious without voiceover.</small>
         </article>
       </div>
     </section>

@@ -17,16 +17,16 @@
         </div>
       </div>
       <nav class="product-nav">
-        <a href="#" class="nav-item">Dashboard</a>
-        <a href="#" class="nav-item">Analysis</a>
+        <a href="#" class="nav-item">Extraction Review</a>
         <a href="#" class="nav-item active">Workflow Graph</a>
         <a href="#" class="nav-item">Blueprint</a>
-        <a href="#" class="nav-item">Impact</a>
+        <a href="#" class="nav-item">Build Review</a>
+        <a href="impact-analysis.html" class="nav-item">Impact Analysis</a>
       </nav>
       <div class="nav-footer-card">
-        <p class="eyebrow">Selected node</p>
-        <strong id="selected-label">Approval Routing</strong>
-        <small id="selected-kind">Human checkpoint</small>
+        <p class="eyebrow">Canonical model</p>
+        <strong id="selected-label">WorkflowGraph v1.4</strong>
+        <small id="selected-kind">Blueprint, code, tests, docs derive from this graph</small>
       </div>
     </aside>
 
@@ -37,15 +37,38 @@
           <h1>Invoice Approval state machine</h1>
         </div>
         <div class="topbar-actions">
-          <span class="pill success">Blueprint synced</span>
+          <span class="pill success">Schema validated</span>
           <a class="primary-action" href="impact-analysis.html">View impact</a>
         </div>
       </header>
 
+      <section class="validation-strip">
+        <article class="validation-card">
+          <p class="eyebrow">Extraction summary</p>
+          <strong>12 steps</strong>
+          <small>4 actors, 3 decisions, 5 business rules</small>
+        </article>
+        <article class="validation-card">
+          <p class="eyebrow">Ambiguities</p>
+          <strong>2 flagged</strong>
+          <small>Threshold amount and missing PO exception confirmed by finance</small>
+        </article>
+        <article class="validation-card">
+          <p class="eyebrow">Structured schema</p>
+          <strong>workflow.invoice-approval.v1.4</strong>
+          <small>Validated before graph generation</small>
+        </article>
+        <article class="validation-card">
+          <p class="eyebrow">Rule engine</p>
+          <strong>Deterministic</strong>
+          <small>No downstream routing relies on prompt-time inference</small>
+        </article>
+      </section>
+
       <section class="graph-layout">
         <div class="graph-canvas-panel">
           <div class="canvas-toolbar">
-            <span class="pill info">Live dependency view</span>
+            <span class="pill info">Canonical dependency view</span>
             <div class="zoom-controls">
               <button type="button">-</button>
               <span>100%</span>
@@ -120,7 +143,15 @@
           </div>
           <div class="inspector-block">
             <span class="pill warning" id="inspector-badge">Human checkpoint</span>
-            <p class="inspector-text">This node is the live handoff boundary. The graph highlights everything downstream that changes when approval logic changes.</p>
+            <p class="inspector-text" id="inspector-summary">This node is the live handoff boundary. The graph highlights everything downstream that changes when approval logic changes.</p>
+          </div>
+          <div class="inspector-block">
+            <p class="eyebrow">Deterministic rule payload</p>
+            <pre class="schema-block" id="schema-block">{
+  "ruleId": "R-001",
+  "condition": "amount &gt;= 1000000",
+  "action": "CFO_APPROVAL"
+}</pre>
           </div>
           <div class="inspector-block">
             <p class="eyebrow">Rules enforced</p>
@@ -131,12 +162,21 @@
             </ul>
           </div>
           <div class="inspector-block">
-            <p class="eyebrow">Observed effects</p>
+            <p class="eyebrow">Technical traceability</p>
+            <div class="effect-list" id="trace-list">
+              <span>Rule R-001</span>
+              <span>Node W-07</span>
+              <span>approval.service.ts</span>
+              <span>approval-routing.test.ts</span>
+            </div>
+          </div>
+          <div class="inspector-block">
+            <p class="eyebrow">Failure handling</p>
             <div class="effect-list">
-              <span>Workflow graph</span>
-              <span>Approval service</span>
-              <span>Regression tests</span>
-              <span>Reviewer checklist</span>
+              <span>Extraction confidence too low</span>
+              <span>Validator rejects missing actor</span>
+              <span>Bob build fails tests</span>
+              <span>Human reviewer rejects change</span>
             </div>
           </div>
         </aside>
