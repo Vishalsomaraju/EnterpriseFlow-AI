@@ -4,16 +4,16 @@ import { errorHandler } from './middleware/error-handler';
 import { db } from './db';
 import { config } from './config';
 import { sql } from 'kysely';
-import { documentRoutes } from './routes/document.routes';
-import { jobRoutes } from './routes/job.routes';
-import { workflowRoutes } from './routes/workflow.routes';
-import { blueprintRoutes } from './routes/blueprint.routes';
-import { buildRoutes } from './routes/build.routes';
-import { bobRoutes } from './routes/bob.routes';
-import { reviewRoutes } from './routes/review.routes';
-import { ruleRoutes } from './routes/rule.routes';
-import dashboardRoutes from './routes/dashboard.routes';
-import executionRoutes from './routes/execution.routes';
+import { documentRoutes } from './routes/projects/document.routes';
+import { jobRoutes } from './routes/jobs/job.routes';
+import { workflowRoutes } from './routes/workflows/workflow.routes';
+import { blueprintRoutes } from './routes/blueprints/blueprint.routes';
+import { buildRoutes } from './routes/builds/build.routes';
+import { bobRoutes } from './routes/builds/bob-evidence.routes';
+import { reviewRoutes } from './routes/reviews/review.routes';
+import { ruleRoutes } from './routes/rules/rule.routes';
+import dashboardRoutes from './routes/activity/dashboard.routes';
+import executionRoutes from './routes/executions/execution.routes';
 
 export function buildApp() {
   const app = fastify({

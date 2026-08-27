@@ -1,9 +1,9 @@
 import { JobService } from './JobService';
 import { JobType } from './types';
-import { ExtractionJobHandler } from './ExtractionJobHandler';
-import { ImplementationJobHandler } from './ImplementationJobHandler';
-import { TestingJobHandler } from './TestingJobHandler';
-import { ExecutionJobHandler } from './ExecutionJobHandler';
+import { ExtractionJobHandler } from './extraction/ExtractionJobHandler';
+import { ImplementationJobHandler } from './build/ImplementationJobHandler';
+import { TestingJobHandler } from './tests/TestingJobHandler';
+import { ExecutionJobHandler } from './execution/ExecutionJobHandler';
 
 export class JobWorker {
   private static timer: NodeJS.Timeout | null = null;

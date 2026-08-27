@@ -6,8 +6,8 @@ import {
   BobChangesSchema,
   BobTestResultSchema
 } from './BobIngestionSchemas';
-import { AppError } from '../../utils/AppError';
-import { lifecycleOrchestrator } from '../../services/LifecycleOrchestrator';
+import { AppError } from '../../errors/AppError';
+import { lifecycleOrchestrator } from '../../services/build/LifecycleOrchestrator';
 
 export class BobEvidenceService {
   async processEvent(payload: unknown) {

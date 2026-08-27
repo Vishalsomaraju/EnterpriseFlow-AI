@@ -1,5 +1,5 @@
 import { AutomationBlueprint, BlueprintActor, BlueprintBusinessRule, BlueprintIntegration, BlueprintNode, BlueprintTransition } from './types';
-import { EngineNode, EngineEdge, EngineRule } from '../workflow/types';
+import { EngineNode, EngineEdge, EngineRule } from '../workflow-engine/types';
 
 export interface WorkflowContext {
   workflow: {
