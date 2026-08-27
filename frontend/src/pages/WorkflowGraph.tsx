@@ -80,23 +80,23 @@ export function WorkflowGraphPage() {
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: '20px' }}>
         <Card>
           <p className="eyebrow">Extraction summary</p>
-          <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>12 steps</strong>
-          <small style={{ color: 'var(--muted)' }}>4 actors, 3 decisions, 5 business rules</small>
+          <h3 style={{ fontSize: '28px', margin: '4px 0' }}>12</h3>
+          <small style={{ color: 'var(--muted)' }}>steps • 4 actors, 3 decisions</small>
         </Card>
         <Card>
           <p className="eyebrow">Ambiguities</p>
-          <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>2 flagged</strong>
-          <small style={{ color: 'var(--muted)' }}>Threshold amount and missing PO exception confirmed by finance</small>
+          <h3 style={{ fontSize: '28px', margin: '4px 0', color: 'var(--warning)' }}>2</h3>
+          <small style={{ color: 'var(--muted)' }}>Threshold amount & missing PO</small>
         </Card>
         <Card>
           <p className="eyebrow">Structured schema</p>
-          <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>workflow.invoice-approval.v1.4</strong>
-          <small style={{ color: 'var(--muted)' }}>Validated before graph generation</small>
+          <h3 style={{ fontSize: '28px', margin: '4px 0' }}>v1.4</h3>
+          <small style={{ color: 'var(--muted)' }}>workflow.invoice-approval</small>
         </Card>
         <Card>
           <p className="eyebrow">Rule engine</p>
-          <strong style={{ fontSize: '16px', display: 'block', margin: '4px 0' }}>Deterministic</strong>
-          <small style={{ color: 'var(--muted)' }}>No downstream routing relies on prompt-time inference</small>
+          <h3 style={{ fontSize: '28px', margin: '4px 0' }}>0</h3>
+          <small style={{ color: 'var(--muted)' }}>Dynamic prompt-time routings</small>
         </Card>
       </section>
 

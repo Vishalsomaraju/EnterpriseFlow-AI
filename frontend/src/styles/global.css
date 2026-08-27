@@ -31,8 +31,9 @@
   --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-* {
+*, *::before, *::after {
   box-sizing: border-box;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, fill 0.2s ease, stroke 0.2s ease;
 }
 
 html, body {
@@ -107,10 +108,11 @@ code {
 }
 
 .brand-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
-  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  display: flex;
   align-items: center;
   justify-content: center;
   background: var(--accent);
@@ -118,6 +120,7 @@ code {
   font-weight: 700;
   font-size: 0.84rem;
   letter-spacing: 0.04em;
+  flex-shrink: 0;
 }
 
 .eyebrow {
@@ -177,7 +180,7 @@ code {
 .nav-item.active,
 .mini-nav.active {
   background: var(--accent-tint);
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  border-color: transparent;
   color: var(--accent);
 }
 
@@ -632,6 +635,21 @@ code {
 .app-shell.dark-mode {
   background: var(--dark-bg);
   color: var(--dark-text);
+  --bg: var(--dark-bg);
+  --surface: var(--dark-surface);
+  --border: var(--dark-border);
+  --text: var(--dark-text);
+  --muted: var(--dark-muted);
+  --success-tint: #103d20;
+  --success: #42be65;
+  --warning-tint: #4d3300;
+  --warning: #f1c21b;
+  --danger-tint: #4c1216;
+  --danger: #fa4d56;
+  --ai-tint: #31135e;
+  --ai: #a56eff;
+  --accent-tint: var(--accent-dark-tint);
+  --accent: var(--accent-dark);
 }
 
 .dark-mode .product-sidebar,
@@ -681,7 +699,7 @@ code {
 .app-shell.dark-mode .nav-item.active {
   background: var(--accent-dark-tint);
   color: var(--accent-dark);
-  border-color: color-mix(in srgb, var(--accent-dark) 25%, var(--dark-border));
+  border-color: transparent;
 }
 
 .product-screen {
@@ -707,15 +725,12 @@ code {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 24px;
-  display: grid;
-  gap: 20px;
   background: var(--bg);
 }
 
 .screen-topbar {
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 0;
   padding: 18px 20px;
   background: var(--surface);
 }

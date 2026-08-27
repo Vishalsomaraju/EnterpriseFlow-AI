@@ -14,9 +14,9 @@ export function Sidebar() {
     <aside className="product-sidebar">
       <div className="sidebar-brand-block">
         <div className="brand-mark">EF</div>
-        <div>
-          <strong>EnterpriseFlow</strong>
-          <small>Workspace</small>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+          <strong style={{ fontSize: '15px' }}>EnterpriseFlow</strong>
+          <span style={{ color: 'var(--muted)', fontSize: '13px', fontWeight: 500 }}>Workspace</span>
         </div>
       </div>
       <nav className="product-nav">

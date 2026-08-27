@@ -23,7 +23,7 @@ export function PageContainer({
       padding: '24px',
       width: '100%',
       maxWidth: maxWidths[variant],
-      marginInline: 'auto',
+      margin: '0 auto',
       display: 'flex',
       flexDirection: 'column',
       gap: '32px',

@@ -92,26 +92,34 @@ export function BlueprintPage() {
 
       <div style={{ marginTop: '32px' }}>
         {activeTab === 'Overview' && (
-          <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+          <section style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
             <Card>
               <p className="eyebrow">Automated steps</p>
-              <h3 style={{ margin: 0 }}>7 Nodes</h3>
+              <h3 style={{ fontSize: '28px', margin: '4px 0' }}>7</h3>
+              <small style={{ color: 'var(--muted)' }}>Nodes in the state machine</small>
             </Card>
             <Card>
               <p className="eyebrow">Human steps</p>
-              <h3 style={{ margin: 0 }}>3 Checkpoints</h3>
+              <h3 style={{ fontSize: '28px', margin: '4px 0' }}>3</h3>
+              <small style={{ color: 'var(--muted)' }}>Governance checkpoints</small>
             </Card>
             <Card>
               <p className="eyebrow">Integrations</p>
-              <h3 style={{ margin: 0 }}>ERP, PO System, Mail Server</h3>
+              <h3 style={{ fontSize: '28px', margin: '4px 0' }}>3</h3>
+              <small style={{ color: 'var(--muted)' }}>ERP, PO System, Mail Server</small>
             </Card>
             <Card>
               <p className="eyebrow">Business rules</p>
-              <h3 style={{ margin: 0 }}>2 Enforcement Policies</h3>
+              <h3 style={{ fontSize: '28px', margin: '4px 0' }}>2</h3>
+              <small style={{ color: 'var(--muted)' }}>Enforcement policies active</small>
             </Card>
             <Card style={{ gridColumn: '1 / -1' }}>
               <p className="eyebrow">Acceptance criteria</p>
-              <h3 style={{ fontSize: '15px', margin: 0, lineHeight: 1.5 }}>1. All invoices &gt; 5L route to CFO. <br/>2. Duplicate invoices must be rejected. <br/>3. PO mismatch requires Finance Manager review.</h3>
+              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5 }}>1. All invoices &gt; 5L route to CFO.</p>
+                <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5 }}>2. Duplicate invoices must be rejected.</p>
+                <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5 }}>3. PO mismatch requires Finance Manager review.</p>
+              </div>
             </Card>
           </section>
         )}

@@ -1,9 +1,23 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { ArrowRight, ArrowDown, ShieldCheck, GitMerge, Settings, Play } from 'lucide-react';
+import { ArrowRight, ArrowDown, ShieldCheck, GitMerge, Settings, Play, Sun, Moon } from 'lucide-react';
 
 export function Landing() {
+  const [isDark, setIsDark] = useState(() => {
+    return localStorage.getItem('theme') === 'dark';
+  });
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark-mode');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDark]);
   return (
     <div className="overview-page" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: 0 }}>
       
@@ -19,17 +33,37 @@ export function Landing() {
         top: 0,
         zIndex: 100
       }}>
-        <div className="sidebar-brand" style={{ gap: '12px', display: 'flex', alignItems: 'center' }}>
+        <div className="sidebar-brand-block" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div className="brand-mark">EF</div>
-          <h1 style={{ fontSize: '16px', margin: 0, fontWeight: 700 }}>EnterpriseFlow AI</h1>
+          <strong style={{ fontSize: '15px', color: 'var(--text)' }}>EnterpriseFlow AI</strong>
         </div>
         
         <nav style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-          <a href="#how-it-works" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>How it works</a>
-          <a href="#bob" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>IBM Bob</a>
-          <a href="#impact" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>Impact Analysis</a>
+          <a href="#how-it-works" style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)' }}>How it works</a>
+          <a href="#bob" style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)' }}>IBM Bob</a>
+          <a href="#impact" style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)' }}>Impact Analysis</a>
+          
+          <button
+            onClick={() => setIsDark(!isDark)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text)',
+              cursor: 'pointer',
+            }}
+            title="Toggle Dark Mode"
+          >
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
           <Link to="/demo">
-            <Button>Open Demo</Button>
+            <Button variant="primary">Open Demo</Button>
           </Link>
         </nav>
       </header>
@@ -37,16 +71,15 @@ export function Landing() {
       {/* Main Content */}
       <main className="overview-main" style={{ flex: 1, padding: '64px 32px', alignItems: 'center', display: 'flex', flexDirection: 'column', gap: '80px', background: 'var(--bg)' }}>
         
-        {/* Hero Section */}
-        <section className="hero-panel" style={{ maxWidth: '1100px', width: '100%', display: 'flex', flexDirection: 'column', gap: '40px', padding: '64px 48px', alignItems: 'center', textAlign: 'center' }}>
+        <section className="hero-panel" style={{ maxWidth: '1100px', width: '100%', display: 'flex', flexDirection: 'column', gap: '40px', padding: '80px 48px', alignItems: 'center', textAlign: 'center', background: 'var(--surface)', border: 'none', boxShadow: 'none' }}>
           <div style={{ maxWidth: '800px' }}>
-            <h1 style={{ fontSize: '48px', letterSpacing: '-0.02em', margin: '0 0 24px 0', lineHeight: 1.1, color: 'var(--text)' }}>
+            <h1 style={{ fontSize: '56px', fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 24px 0', lineHeight: 1.1, color: 'var(--text)' }}>
               Turn business workflows into working software.
             </h1>
-            <p className="hero-copy" style={{ fontSize: '18px', color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
+            <p className="hero-copy" style={{ fontSize: '20px', color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
               EnterpriseFlow transforms messy business processes into structured automation blueprints, then uses IBM Bob to help turn those blueprints into tested, documented software.
             </p>
-            <div style={{ marginTop: '32px' }}>
+            <div style={{ marginTop: '40px' }}>
               <Link to="/demo">
                 <Button size="lg" style={{ fontSize: '15px' }}>Try EnterpriseFlow <ArrowRight size={16} style={{ marginLeft: '8px' }} /></Button>
               </Link>
@@ -54,30 +87,30 @@ export function Landing() {
           </div>
 
           {/* Hero Visual Block Diagram */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '32px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Card style={{ padding: '16px 24px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-              <strong style={{ fontSize: '14px', margin: 0 }}>Business Requirement</strong>
-            </Card>
-            <ArrowRight size={20} color="var(--muted)" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '48px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div className="pill" style={{ padding: '8px 16px', background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: '13px' }}>
+              Business Requirement
+            </div>
+            <ArrowRight size={16} color="var(--muted)" />
             
-            <Card style={{ padding: '16px 24px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-              <strong style={{ fontSize: '14px', margin: 0 }}>Workflow</strong>
-            </Card>
-            <ArrowRight size={20} color="var(--muted)" />
+            <div className="pill" style={{ padding: '8px 16px', background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: '13px' }}>
+              Workflow
+            </div>
+            <ArrowRight size={16} color="var(--muted)" />
 
-            <Card style={{ padding: '16px 24px', background: 'var(--accent-tint)', border: '1px solid var(--accent)', color: 'var(--accent)', borderRadius: 'var(--radius-md)' }}>
-              <strong style={{ fontSize: '14px', margin: 0 }}>Automation Blueprint</strong>
-            </Card>
-            <ArrowRight size={20} color="var(--muted)" />
+            <div className="pill info" style={{ padding: '8px 16px', fontSize: '13px' }}>
+              Automation Blueprint
+            </div>
+            <ArrowRight size={16} color="var(--muted)" />
 
-            <Card style={{ padding: '16px 24px', background: 'var(--ai-tint)', border: '1px solid var(--ai)', color: 'var(--ai)', borderRadius: 'var(--radius-md)' }}>
-              <strong style={{ fontSize: '14px', margin: 0 }}>IBM Bob</strong>
-            </Card>
-            <ArrowRight size={20} color="var(--muted)" />
+            <div className="pill ai" style={{ padding: '8px 16px', fontSize: '13px' }}>
+              IBM Bob
+            </div>
+            <ArrowRight size={16} color="var(--muted)" />
 
-            <Card style={{ padding: '16px 24px', background: 'var(--success-tint)', border: '1px solid var(--success)', color: 'var(--success)', borderRadius: 'var(--radius-md)' }}>
-              <strong style={{ fontSize: '14px', margin: 0 }}>Working Software</strong>
-            </Card>
+            <div className="pill success" style={{ padding: '8px 16px', fontSize: '13px' }}>
+              Working Software
+            </div>
           </div>
         </section>
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import clsx from 'clsx';
 import { PageHeader } from '../components/PageHeader';
 import { Card } from '../components/Card';
 import { PageContainer } from '../components/layout/PageContainer';
@@ -17,14 +18,11 @@ export function SettingsPage() {
             <button 
               key={t}
               onClick={() => setActiveTab(t)}
+              className={clsx('mini-nav', activeTab === t && 'active')}
               style={{
+                width: '100%',
                 textAlign: 'left',
-                padding: '8px 12px',
-                borderRadius: '4px',
-                background: activeTab === t ? 'var(--accent-tint)' : 'transparent',
-                color: activeTab === t ? 'var(--accent)' : 'var(--text)',
-                fontWeight: activeTab === t ? 600 : 400,
-                border: 'none',
+                border: '1px solid transparent',
                 cursor: 'pointer'
               }}
             >

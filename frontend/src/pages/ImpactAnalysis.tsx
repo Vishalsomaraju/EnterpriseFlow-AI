@@ -79,19 +79,19 @@ export function ImpactAnalysisPage() {
 
       <section style={{ marginTop: '24px', marginBottom: '24px', display: 'flex', gap: '32px', alignItems: 'stretch' }}>
         <Card style={{ flex: 1 }}>
-          <h2 style={{ fontSize: '16px', color: 'var(--muted)', margin: 0, marginBottom: '12px' }}>Business rule changed:</h2>
-          <div style={{ fontSize: '24px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ color: 'var(--danger)' }}>₹5,00,000</span>
-            <span style={{ color: 'var(--muted)' }}>→</span>
-            <span style={{ color: 'var(--success)' }}>₹10,00,000</span>
+          <p className="eyebrow">Business rule changed</p>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text)', margin: '4px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span>₹5,00,000</span>
+            <span style={{ color: 'var(--muted)', fontSize: '20px' }}>→</span>
+            <span>₹10,00,000</span>
           </div>
         </Card>
         
         <Card style={{ flex: 2 }}>
-          <h2 style={{ fontSize: '14px', color: 'var(--muted)', margin: 0, marginBottom: '12px' }}>Affected components:</h2>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <p className="eyebrow">Affected components</p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
             {['Approval Router', 'Approval Service', 'Workflow Graph', 'Tests', 'API Documentation'].map(item => (
-              <span key={item} style={{ padding: '6px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '13px', fontWeight: 500 }}>
+              <span key={item} className="pill" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}>
                 {item}
               </span>
             ))}

@@ -57,11 +57,11 @@ export function ChangeReviewPage() {
       <div style={{ maxWidth: '800px', margin: '40px auto' }}>
         
         <Card style={{ marginBottom: '32px' }}>
-          <h2 style={{ fontSize: '16px', color: 'var(--muted)', marginBottom: '8px', margin: 0 }}>Business rule:</h2>
-          <div style={{ fontSize: '24px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
-            <span style={{ color: 'var(--danger)' }}>₹5L</span>
+          <p className="eyebrow">Business rule changed</p>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+            <span>₹5L</span>
             <ArrowRight size={24} color="var(--muted)" />
-            <span style={{ color: 'var(--success)' }}>₹10L</span>
+            <span>₹10L</span>
           </div>
         </Card>
         
@@ -86,10 +86,10 @@ export function ChangeReviewPage() {
 
         <Card style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
           <div>
-            <span style={{ display: 'block', fontSize: '13px', color: 'var(--muted)', marginBottom: '4px' }}>Regression tests:</span>
-            <strong style={{ fontSize: '20px' }}>{summary.testsPassed} / {summary.testsPassed + summary.testsFailed}</strong>
+            <p className="eyebrow">Regression tests</p>
+            <h3 style={{ fontSize: '28px', margin: '4px 0 0 0' }}>{summary.testsPassed} / {summary.testsPassed + summary.testsFailed}</h3>
           </div>
-          <Check size={24} color="var(--success)" />
+          <Check size={32} color="var(--success)" />
         </Card>
 
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end' }}>
