@@ -101,6 +101,9 @@ export class ReviewService {
       status: 'SUCCESS',
       metadata: null
     }).execute();
+
+    // Transition build
+    await db.updateTable('builds').set({ status: 'FAILED' }).where('id', '=', review.build_id).execute();
   }
 }
 
