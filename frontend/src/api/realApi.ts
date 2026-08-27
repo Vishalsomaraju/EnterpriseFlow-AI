@@ -91,16 +91,25 @@ export class RealApiService implements ApiService {
     };
   }
   getSecurityResult(buildId: string): Promise<SecurityResult> {
-    // For MVP, we'll return a default until a GET endpoint is created
-    return Promise.resolve({ status: 'PASS', critical: 0, high: 0, medium: 0, low: 0 });
+    return apiClient.get<SecurityResult>(`/builds/${buildId}/security`);
   }
   getTests(buildId: string): Promise<TestRun[]> {
-    return apiClient.get<any>(`/builds/${buildId}/tests`).then(res => res ? [res] : []);
+    return apiClient.get<any>(`/builds/${buildId}/tests`).then(res => {
+      if (!res || !res.testRuns) return [];
+      return res.testRuns.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        status: r.status,
+        durationMs: r.duration_ms,
+        mode: r.is_demo ? 'DEMO' : 'REAL',
+        isDemo: r.is_demo
+      }));
+    });
   }
   getDocumentation(buildId: string): Promise<any> {
     return apiClient.get<any>(`/builds/${buildId}/documentation`);
   }
-  getReviewSummary(workflowId: string): Promise<ReviewSummary> {
+  getReviewSummary(_workflowId: string): Promise<ReviewSummary> {
     return Promise.resolve({ filesChanged: 0, testsPassed: 0, testsFailed: 0, rulesChanged: 0, businessImpact: '' });
   }
 }

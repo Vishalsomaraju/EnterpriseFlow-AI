@@ -127,4 +127,56 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(500).send({ error: 'INTERNAL_ERROR' });
     }
   });
+
+  app.post<{ Params: { id: string } }>('/:id/security-scan', async (request, reply) => {
+    try {
+      const { JobService } = await import('../../jobs/JobService');
+      const { JobWorker } = await import('../../jobs/JobWorker');
+      const { JobType } = await import('../../jobs/types');
+
+      const jobId = await JobService.createJob(JobType.SECURITY_SCAN, 'BUILD', request.params.id);
+      JobWorker.dispatch(jobId, JobType.SECURITY_SCAN, request.params.id);
+      
+      return reply.send({ jobId, status: 'QUEUED' });
+    } catch (err) {
+      return reply.status(500).send({ error: 'INTERNAL_ERROR' });
+    }
+  });
+
+  app.get<{ Params: { id: string } }>('/:id/security', async (request, reply) => {
+    try {
+      const scan = await db.selectFrom('security_scans')
+        .where('build_id', '=', request.params.id)
+        .selectAll()
+        .executeTakeFirst();
+      
+      if (!scan) {
+        return reply.status(404).send({ error: 'Not found' });
+      }
+
+      return reply.send({
+        status: scan.status,
+        critical: scan.critical,
+        high: scan.high,
+        medium: scan.medium,
+        low: scan.low
+      });
+    } catch (err) {
+      return reply.status(500).send({ error: 'INTERNAL_ERROR' });
+    }
+  });
+
+  app.get<{ Params: { id: string } }>('/:id/review', async (request, reply) => {
+    try {
+      const review = await db.selectFrom('reviews')
+        .where('build_id', '=', request.params.id)
+        .orderBy('created_at', 'desc')
+        .selectAll()
+        .executeTakeFirst();
+      
+      return reply.send(review || null);
+    } catch (err) {
+      return reply.status(500).send({ error: 'INTERNAL_ERROR' });
+    }
+  });
 };

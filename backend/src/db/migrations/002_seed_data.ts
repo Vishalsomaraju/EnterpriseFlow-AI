@@ -144,7 +144,8 @@ export async function up(db: Kysely<any>): Promise<void> {
   const [blueprint] = await db
     .insertInto('blueprints')
     .values({
-      version_id: versionId,
+      workflow_version_id: versionId,
+      schema_json: JSON.stringify({}),
     })
     .returning('id')
     .execute();

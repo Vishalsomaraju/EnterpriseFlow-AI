@@ -8,8 +8,6 @@ export class ExtractionJobHandler {
     try {
       // Step 1: Parsing
       await JobService.updateStage(jobId, ExtractionStages[1].name, ExtractionStages[1].progress);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
-
       // Step 2: Extracting
       await JobService.updateStage(jobId, ExtractionStages[2].name, ExtractionStages[2].progress);
       
@@ -42,8 +40,6 @@ export class ExtractionJobHandler {
 
       // Step 3: Validating
       await JobService.updateStage(jobId, ExtractionStages[3].name, ExtractionStages[3].progress);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
-      
       // Step 4: Completed
       // Ensure the resource_id is updated to point to the workflow Id for result reference
       const finalDoc = await db.selectFrom('documents').select('workflow_id').where('id', '=', documentId).executeTakeFirst();

@@ -42,3 +42,9 @@ export const ExecutionStages = [
   { name: 'RUNNING', progress: 50 },
   { name: 'COMPLETED', progress: 100 }
 ];
+
+export const SecurityScanStages = [
+  { name: 'QUEUED', progress: 0 },
+  { name: 'SCANNING', progress: 50 },
+  { name: 'COMPLETED', progress: 100 }
+];

@@ -21,7 +21,7 @@ export class BlueprintService {
       .executeTakeFirst();
 
     if (!versionRow) {
-      throw new AppError('NOT_FOUND', 'Workflow version not found', 'BlueprintService');
+      throw new AppError('Workflow version not found', 'NOT_FOUND', 404);
     }
 
     const versionId = versionRow.id;
@@ -66,12 +66,13 @@ export class BlueprintService {
       .selectAll()
       .execute();
 
-    // Fetch AC (Documents? or we just mock acceptance criteria if not in DB yet)
-    // For now we will return some hardcoded AC if none exists since the schema doesn't have an explicit acceptance criteria table
-    const acceptanceCriteria = [
-      "All invoices > 5L route to CFO.",
-      "Duplicate invoices must be rejected."
-    ];
+    // Generate acceptance criteria from business rules
+    const acceptanceCriteria = graphData.rules.map(r => 
+      `Rule ${r.id}: When ${r.condition || 'default'} then ${r.action || 'continue'}`
+    );
+    if (acceptanceCriteria.length === 0) {
+      acceptanceCriteria.push("Workflow executes from start to terminal state");
+    }
 
     const context: WorkflowContext = {
       workflow: {
@@ -91,7 +92,7 @@ export class BlueprintService {
     
     const engineNodes = graphData.nodes.map(n => ({
       id: n.id,
-      type: n.kind, // In DTO, type is 'automated', kind is 'DECISION'
+      type: n.kind,
       label: n.label,
       automated: n.type === 'automated',
       inputs: {},
@@ -103,7 +104,7 @@ export class BlueprintService {
       id: e.id,
       sourceId: e.source,
       targetId: e.target,
-      condition: e.label,
+      condition: e.label || undefined,
       type: e.isBranch ? 'BRANCH' as const : 'DEFAULT' as const
     }));
 
@@ -119,6 +120,9 @@ export class BlueprintService {
 
     // 4. Validate Blueprint
     const validationResult = BlueprintValidator.validate(generatedBlueprint);
+    if (!validationResult.isValid) {
+      console.log("BLUEPRINT VALIDATION ERRORS:", validationResult.errors);
+    }
     const status = validationResult.isValid ? 'VALID' : 'INVALID';
 
     // 5. Persist

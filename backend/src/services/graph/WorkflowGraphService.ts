@@ -66,7 +66,7 @@ export class WorkflowGraphService {
         id: e.id,
         source: e.sourceId,
         target: e.targetId,
-        label: e.condition,
+        label: e.condition || null,
         isBranch: e.type === 'BRANCH'
       })),
       rules: rules.map(r => ({

@@ -15,7 +15,7 @@ export const BobEventSchema = BobIdentitySchema.extend({
     'TESTS_RECEIVED'
   ]),
   message: z.string(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   timestamp: z.string().datetime().optional()
 });
 
@@ -26,7 +26,7 @@ export const BobSubagentSchema = z.object({
 
 export const BobPlanSchema = BobIdentitySchema.extend({
   summary: z.string(),
-  plan_json: z.record(z.any()),
+  plan_json: z.record(z.string(), z.any()),
   subagents: z.array(BobSubagentSchema).optional()
 });
 

@@ -29,9 +29,9 @@ export class DashboardService {
     // Let's count jobs related to the project's blueprints/versions.
     const pendingTasksQuery = await db
       .selectFrom('jobs as j')
-      .innerJoin('builds as b', 'b.id', 'j.build_id')
+      .innerJoin('builds as b', 'b.id', 'j.resource_id')
       .innerJoin('blueprints as bp', 'bp.id', 'b.blueprint_id')
-      .innerJoin('workflow_versions as wv', 'wv.id', 'bp.version_id')
+      .innerJoin('workflow_versions as wv', 'wv.id', 'bp.workflow_version_id')
       .innerJoin('workflows as w', 'w.id', 'wv.workflow_id')
       .where('w.project_id', '=', projectId)
       .where('j.status', 'in', ['QUEUED', 'RUNNING'])
@@ -43,7 +43,7 @@ export class DashboardService {
       .selectFrom('build_changes as bc')
       .innerJoin('builds as b', 'b.id', 'bc.build_id')
       .innerJoin('blueprints as bp', 'bp.id', 'b.blueprint_id')
-      .innerJoin('workflow_versions as wv', 'wv.id', 'bp.version_id')
+      .innerJoin('workflow_versions as wv', 'wv.id', 'bp.workflow_version_id')
       .innerJoin('workflows as w', 'w.id', 'wv.workflow_id')
       .where('w.project_id', '=', projectId)
       .select((eb) => eb.fn.count<number>('bc.id').as('count'))

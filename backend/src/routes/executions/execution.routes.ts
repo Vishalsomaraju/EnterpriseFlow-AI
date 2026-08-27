@@ -2,6 +2,8 @@ import { FastifyInstance } from 'fastify';
 import { db } from '../../db/index';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
+import { JobWorker } from '../../jobs/JobWorker';
+import { JobType } from '../../jobs/types';
 
 const ExecutePayloadSchema = z.object({
   versionId: z.string(),
@@ -41,27 +43,23 @@ export default async function executionRoutes(app: FastifyInstance) {
     const executionId = `exec_${randomUUID()}`;
     await db.insertInto('workflow_executions').values({
       id: executionId,
-      workflow_id: workflowId,
-      status: 'QUEUED', // Starting state
+      version_id: versionId,
+      status: 'QUEUED',
       input_snapshot: invoiceData,
       idempotency_key: key
     }).execute();
 
     // 2. Create EXECUTION job
-    const jobId = `job_${randomUUID()}`;
+    const jobId = randomUUID();
     await db.insertInto('jobs').values({
       id: jobId,
-      type: 'EXECUTION',
+      type: JobType.EXECUTION,
       status: 'QUEUED',
-      resource_id: executionId,
-      payload: {
-        executionId,
-        workflowId,
-        versionId,
-        inputSnapshot: invoiceData,
-        idempotencyKey: key
-      }
+      resource_id: executionId
     }).execute();
+
+    // 3. Dispatch to JobWorker asynchronously
+    JobWorker.dispatch(jobId, JobType.EXECUTION, executionId);
 
     return reply.code(202).send({ jobId, status: 'QUEUED', executionId });
   });
@@ -70,11 +68,17 @@ export default async function executionRoutes(app: FastifyInstance) {
   app.get('/workflows/:workflowId/execution', async (request, reply) => {
     const { workflowId } = request.params as { workflowId: string };
 
-    const execution = await db.selectFrom('workflow_executions')
-      .where('workflow_id', '=', workflowId)
-      .orderBy('started_at', 'desc')
-      .selectAll()
-      .executeTakeFirst();
+    const versions = await db.selectFrom('workflow_versions').select('id').where('workflow_id', '=', workflowId).execute();
+    const versionIds = versions.map(v => v.id);
+
+    let execution = null;
+    if (versionIds.length > 0) {
+      execution = await db.selectFrom('workflow_executions')
+        .where('version_id', 'in', versionIds)
+        .orderBy('started_at', 'desc')
+        .selectAll()
+        .executeTakeFirst();
+    }
 
     if (!execution) {
       return reply.code(404).send({ error: { message: 'Execution not found' } });
@@ -97,8 +101,8 @@ export default async function executionRoutes(app: FastifyInstance) {
     return {
       execution: {
         id: execution.id,
-        workflowId: execution.workflow_id,
-        workflowVersionId: execution.metadata?.workflow_version_id || 'unknown',
+        workflowId: workflowId,
+        workflowVersionId: execution.version_id,
         status: execution.status,
         currentNodeId: mappedHistory.length > 0 ? mappedHistory[mappedHistory.length - 1].nodeId : null
       },

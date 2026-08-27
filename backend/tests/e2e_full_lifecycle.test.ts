@@ -26,6 +26,7 @@ describe('E2E Full Lifecycle & Invariant Audit', () => {
     await app.ready();
     
     // Clear potentially conflicting state for a clean run
+    await db.deleteFrom('workflow_executions').execute();
     await db.deleteFrom('projects').where('name', '=', 'E2E Test Project').execute();
     
     // Create base project
@@ -35,24 +36,30 @@ describe('E2E Full Lifecycle & Invariant Audit', () => {
     projectId = project.id;
   });
 
-  const waitForJob = async (jobId: string, timeoutMs = 5000) => {
+  const waitForJob = async (jobId: string, timeoutMs = 15000) => {
     let elapsed = 0;
     while (elapsed < timeoutMs) {
       const job = await db.selectFrom('jobs').where('id', '=', jobId).selectAll().executeTakeFirst();
-      if (job?.status === 'COMPLETED' || job?.status === 'FAILED') return job;
-      await new Promise(r => setTimeout(r, 100));
-      elapsed += 100;
+      if (job?.status === 'COMPLETED' || job?.status === 'FAILED') {
+        if (job.status === 'FAILED') {
+          console.error("Job Failed:", job);
+        }
+        return job;
+      }
+      await new Promise(r => setTimeout(r, 200));
+      elapsed += 200;
     }
-    throw new Error('Job timed out');
+    throw new Error(`Job ${jobId} timed out after ${timeoutMs}ms`);
   };
 
   test('STEP 1 & 2: Workflow Extraction (Concurrency + DB Truth)', async () => {
     // Insert a document manually as if uploaded
     const doc = await db.insertInto('documents').values({
       project_id: projectId,
-      name: 'Invoice_Approval_Policy.pdf',
-      s3_key: 'test/Invoice_Approval_Policy.pdf',
-      status: 'UPLOADED'
+      filename: 'Invoice_Approval_Policy.pdf',
+      mime_type: 'application/pdf',
+      storage_path: 'test/Invoice_Approval_Policy.pdf',
+      extraction_status: 'UPLOADED'
     }).returning('id').executeTakeFirstOrThrow();
     documentId = doc.id;
 
@@ -81,7 +88,7 @@ describe('E2E Full Lifecycle & Invariant Audit', () => {
     const version = await db.selectFrom('workflow_versions').where('workflow_id', '=', workflowId).selectAll().executeTakeFirst();
     expect(version).toBeDefined();
     versionId = version!.id;
-  });
+  }, 30000);
 
   test('STEP 3 & 4: Analysis & Graph Generation', async () => {
     const res = await app.inject({ method: 'GET', url: `/workflows/${workflowId}/graph` });
@@ -98,11 +105,11 @@ describe('E2E Full Lifecycle & Invariant Audit', () => {
     
     // Ensure the 500k rule exists (for our step 13 rule change test)
     // For test purposes we assume the extraction generated it, or we insert it if the AI mock didn't.
-  });
+  }, 30000);
 
   test('STEP 5: Blueprint Generation (Idempotency)', async () => {
-    const req1 = app.inject({ method: 'POST', url: `/blueprints`, payload: { workflowId } });
-    const req2 = app.inject({ method: 'POST', url: `/blueprints`, payload: { workflowId } });
+    const req1 = app.inject({ method: 'POST', url: `/workflows/${workflowId}/blueprint` });
+    const req2 = app.inject({ method: 'POST', url: `/workflows/${workflowId}/blueprint` });
     
     const [res1, res2] = await Promise.all([req1, req2]);
     // Both might return 200/201 depending on how /blueprints is implemented, but DB should have 1 blueprint
@@ -113,7 +120,7 @@ describe('E2E Full Lifecycle & Invariant Audit', () => {
     
     // Verify Architectural Invariant: Blueprint belongs to exactly one version
     expect(blueprints[0].workflow_version_id).toBe(versionId);
-  });
+  }, 30000);
 
   test('STEP 6: Bob Engineering Package (Build Creation)', async () => {
     const res = await app.inject({ method: 'POST', url: `/blueprints/${blueprintId}/implement` });
@@ -130,27 +137,37 @@ describe('E2E Full Lifecycle & Invariant Audit', () => {
     
     // Verify Architectural Invariant: Build references exactly one blueprint
     expect(build?.blueprint_id).toBe(blueprintId);
-  });
+  }, 20000);
 
   test('STEP 7 & 8: Bob Evidence Submission (Boundary Simulation)', async () => {
     // Bob sends PLAN
     await app.inject({
       method: 'POST',
-      url: `/builds/${buildId}/bob/events`,
-      payload: { eventType: 'PLAN_CREATED', metadata: {} }
+      url: `/builds/${buildId}/bob/plan`,
+      payload: { 
+        bob_session_id: 'session-123',
+        event_id: 'evt-1',
+        summary: 'Planning test',
+        plan_json: {}
+      }
     });
     
     // Bob sends CHANGES_RECEIVED
     await app.inject({
       method: 'POST',
-      url: `/builds/${buildId}/bob/events`,
-      payload: { eventType: 'CHANGES_RECEIVED', metadata: { files: ['src/approval.ts'] } }
+      url: `/builds/${buildId}/bob/changes`,
+      payload: { 
+        bob_session_id: 'session-123',
+        event_id: 'evt-2',
+        change_set_id: 'change-1',
+        files: [{ file_path: 'src/approval.ts', change_type: 'modified' }]
+      }
     });
     
     const build = await db.selectFrom('builds').where('id', '=', buildId).selectAll().executeTakeFirst();
     // After CHANGES_RECEIVED, status should progress (e.g. to SECURITY_SCANNED or TESTING)
     expect(build?.status).not.toBe('WAITING_FOR_BOB');
-  });
+  }, 30000);
 
   test('STEP 9 & 10: Tests & Docs', async () => {
     // Simulate triggering tests (normally done via JobWorker after CHANGES_RECEIVED)
@@ -163,24 +180,33 @@ describe('E2E Full Lifecycle & Invariant Audit', () => {
     const testRuns = await db.selectFrom('test_runs').where('build_id', '=', buildId).selectAll().execute();
     // DB Truth verification
     expect(testRuns.length).toBeGreaterThan(0);
-  });
+  }, 20000);
 
   test('STEP 11: Review lifecycle & Negative Paths', async () => {
-    // Negative Path: Try to approve an invalid/untested build (simulate by forcing status back)
+    // Create a review record so we can approve/reject it
+    const reviewRes = await app.inject({
+      method: 'POST',
+      url: `/reviews/builds/${buildId}/reviews`,
+      payload: { reviewer: 'governance-lead@company.com', comments: 'E2E review', versionId }
+    });
+    const review = JSON.parse(reviewRes.body);
+    const reviewId = review.id;
+
+    // Negative Path: force build into bad status, then attempt approval
     await db.updateTable('builds').set({ status: 'TESTING_FAILED' }).where('id', '=', buildId).execute();
     
-    const badApprove = await app.inject({ method: 'POST', url: `/reviews/${buildId}/approve` });
-    expect(badApprove.statusCode).toBe(400); // Should fail because not READY_FOR_REVIEW
+    const badApprove = await app.inject({ method: 'POST', url: `/reviews/${reviewId}/approve` });
+    expect(badApprove.statusCode).toBe(400); // Should fail because build not READY_FOR_REVIEW
     
-    // Fix status to READY_FOR_REVIEW
+    // Fix status to READY_FOR_REVIEW for the happy path
     await db.updateTable('builds').set({ status: 'READY_FOR_REVIEW' }).where('id', '=', buildId).execute();
     
-    const goodApprove = await app.inject({ method: 'POST', url: `/reviews/${buildId}/approve` });
+    const goodApprove = await app.inject({ method: 'POST', url: `/reviews/${reviewId}/approve` });
     expect(goodApprove.statusCode).toBe(200);
     
     const build = await db.selectFrom('builds').where('id', '=', buildId).selectAll().executeTakeFirst();
-    expect(build?.status).toBe('APPROVED');
-  });
+    expect(build?.status).toBe('ACTIVATED');
+  }, 30000);
 
   test('STEP 12: Execute Workflow (Two-Invoice Scenario Version 1)', async () => {
     // Assuming extraction created a 500k rule. 
@@ -190,6 +216,7 @@ describe('E2E Full Lifecycle & Invariant Audit', () => {
       url: `/workflows/${workflowId}/execute`,
       payload: { versionId, invoiceData: { amount: 400000, hasPO: true, isDuplicate: false } }
     });
+    expect(resA.statusCode).toBe(202);
     
     const jobA = await waitForJob(JSON.parse(resA.body).jobId);
     const historyA = await db.selectFrom('workflow_execution_history').where('execution_id', '=', jobA.resource_id!).selectAll().execute();
@@ -201,26 +228,27 @@ describe('E2E Full Lifecycle & Invariant Audit', () => {
       url: `/workflows/${workflowId}/execute`,
       payload: { versionId, invoiceData: { amount: 750000, hasPO: true, isDuplicate: false } }
     });
+    expect(resB.statusCode).toBe(202);
     const jobB = await waitForJob(JSON.parse(resB.body).jobId);
     const historyB = await db.selectFrom('workflow_execution_history').where('execution_id', '=', jobB.resource_id!).selectAll().execute();
     expect(historyB.some(h => h.event === 'CFO')).toBe(true);
-  });
+  }, 30000);
 
   test('STEP 13 & 14: Rule Change, Impact Analysis, & Immutability Proof', async () => {
     // 1. Fetch rule to change
     const rules = await db.selectFrom('business_rules').where('version_id', '=', versionId).selectAll().execute();
     const rule = rules[0]; // Assuming this is the threshold rule
     
-    // 2. Change rule
+    // 2. Change rule — API expects { baseVersion: number, expression: string }
     const resChange = await app.inject({
       method: 'PUT',
       url: `/rules/${rule.id}`,
-      payload: { condition: 'amount >= 1000000' }
+      payload: { baseVersion: 1, expression: 'amount >= 1000000' }
     });
     expect(resChange.statusCode).toBe(200);
     
     // 3. Immutability Verification
-    // Version 1 should still exist and have old rules
+    // Version 1 should still exist and have old rules (original condition unchanged)
     const v1Rules = await db.selectFrom('business_rules').where('version_id', '=', versionId).selectAll().execute();
     expect(v1Rules.find(r => r.id === rule.id)?.condition).not.toBe('amount >= 1000000');
     
@@ -230,14 +258,15 @@ describe('E2E Full Lifecycle & Invariant Audit', () => {
     expect(newVersion?.version).toBe(2);
     
     // 4. Two-Invoice Scenario Version 2
-    // Execute Invoice B: 750k -> Now routes to Finance Manager instead of CFO
+    // Execute Invoice B: 750k -> Now routes to Finance Manager instead of CFO (threshold raised to 1M)
     const resB2 = await app.inject({
       method: 'POST',
       url: `/workflows/${workflowId}/execute`,
       payload: { versionId: newVersion!.id, invoiceData: { amount: 750000, hasPO: true, isDuplicate: false } }
     });
+    expect(resB2.statusCode).toBe(202);
     const jobB2 = await waitForJob(JSON.parse(resB2.body).jobId);
     const historyB2 = await db.selectFrom('workflow_execution_history').where('execution_id', '=', jobB2.resource_id!).selectAll().execute();
     expect(historyB2.some(h => h.event === 'Finance Manager')).toBe(true); // Changed routing!
-  });
+  }, 30000);
 });

@@ -19,7 +19,7 @@ export class WorkflowExecutionService {
       // Find start node heuristically (no incoming edges, or type 'TRIGGER')
       // For MVP, if there's no node named 'START', we'll just start at VendorValidation or the first node without incoming edges.
       const targetIds = new Set(edges.map(e => e.target_id));
-      let currentNode = nodes.find(n => !targetIds.has(n.id)) || nodes[0];
+      let currentNode: typeof nodes[0] | undefined = nodes.find(n => !targetIds.has(n.id)) || nodes[0];
 
       if (!currentNode) {
         throw new Error('Graph is empty or invalid');
@@ -38,8 +38,8 @@ export class WorkflowExecutionService {
 
       // 2. Traversal Loop
       while (currentNode && currentStatus === 'RUNNING') {
-        const nodeId = currentNode.id;
-        const nodeName = currentNode.name;
+        const nodeId: string = currentNode.id;
+        const nodeName: string = currentNode.name;
         
         let decision: any = null;
         let nextNodeId: string | null = null;
@@ -62,7 +62,7 @@ export class WorkflowExecutionService {
             currentStatus = 'FAILED';
             failureReason = 'Missing Purchase Order';
           }
-        } else if (lowerName.includes('amount') || lowerName.includes('threshold') || lowerName.includes('routing')) {
+        } else if (rules.length > 0) {
           // Rule Engine Simulation
           // Find the rule associated with this node, or any rule in the graph
           // We'll evaluate rules to determine the branch
@@ -92,10 +92,12 @@ export class WorkflowExecutionService {
               const isCFO = rule.action?.includes('CFO');
               const outgoingEdges = edges.filter(e => e.source_id === nodeId);
               
-              const targetEdge = outgoingEdges.find(e => 
-                (isCFO && e.label?.includes('CFO')) || 
-                (!isCFO && e.label?.toLowerCase().includes('manager'))
-              ) || outgoingEdges[0];
+              const targetEdge = outgoingEdges.find(e => {
+                const targetNode = nodes.find(n => n.id === e.target_id);
+                if (!targetNode) return false;
+                const nodeNameLower = targetNode.name.toLowerCase();
+                return (isCFO && nodeNameLower.includes('cfo')) || (!isCFO && nodeNameLower.includes('manager'));
+              }) || outgoingEdges[0];
 
               if (targetEdge) {
                 nextNodeId = targetEdge.target_id;
@@ -107,20 +109,20 @@ export class WorkflowExecutionService {
 
           if (!routed) {
             // Default to first outgoing edge if no rule matches
-            const outEdges = edges.filter(e => e.source_id === nodeId);
+            const outEdges: any[] = edges.filter(e => e.source_id === nodeId);
             if (outEdges.length > 0) nextNodeId = outEdges[0].target_id;
           }
         }
 
         // Default routing for non-branching nodes
         if (!nextNodeId && currentStatus !== 'FAILED') {
-          const outEdges = edges.filter(e => e.source_id === nodeId);
+          const outEdges: any[] = edges.filter(e => e.source_id === nodeId);
           if (outEdges.length > 0) nextNodeId = outEdges[0].target_id;
         }
 
         // Record History
         await db.insertInto('workflow_execution_history').values({
-          id: `hist_${randomUUID()}`,
+          id: randomUUID(),
           execution_id: executionId,
           event: nodeName,
           metadata: {

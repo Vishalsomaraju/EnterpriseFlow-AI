@@ -1,6 +1,7 @@
 import { db } from '../../db/index';
 import path from 'path';
 import fs from 'fs';
+import { randomUUID } from 'crypto';
 
 export class DocumentationService {
   async generateAndPersistDocs(buildId: string): Promise<void> {
@@ -12,7 +13,7 @@ export class DocumentationService {
     const readmePath = path.join(repoPath, 'README.md');
     if (fs.existsSync(readmePath)) {
       docsToSave.push({
-        id: `doc_${Date.now()}_readme`,
+        id: randomUUID(),
         build_id: buildId,
         title: 'Project README',
         content: fs.readFileSync(readmePath, 'utf-8'),
@@ -23,7 +24,7 @@ export class DocumentationService {
 
     // Mock an architectural generated summary for MVP
     docsToSave.push({
-      id: `doc_${Date.now()}_arch`,
+      id: randomUUID(),
       build_id: buildId,
       title: 'Invoice Implementation Architecture',
       content: '# Invoice Engine Summary\n\nAutomatically generated engineering documentation for this build.',

@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
-import { bobEvidenceService } from '../../../domain/bob/BobEvidenceService';
+import { bobEvidenceService } from '../../domain/bob/BobEvidenceService';
 
 export const bobRoutes: FastifyPluginAsync = async (app) => {
   app.post<{ Params: { id: string } }>('/:id/bob/events', async (request, reply) => {

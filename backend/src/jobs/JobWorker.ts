@@ -26,6 +26,10 @@ export class JobWorker {
           case JobType.EXECUTION:
             await ExecutionJobHandler.handle(jobId, resourceId);
             break;
+          case JobType.SECURITY_SCAN:
+            const { SecurityScanJobHandler } = await import('./security/SecurityScanJobHandler');
+            await SecurityScanJobHandler.handle(jobId, resourceId);
+            break;
           default:
             console.error(`Unknown job type: ${type}`);
         }

@@ -113,7 +113,10 @@ export interface RuleDependencyTable {
 
 export interface BlueprintTable {
   id: Generated<string>;
-  version_id: string;
+  workflow_version_id: string;
+  schema_json: any;
+  validation_status: string;
+  validation_errors: any | null;
   created_at: Generated<Date>;
 }
 
@@ -173,9 +176,10 @@ export interface TestRunTable {
   status: string | null;
   repository_path: string | null;
   commit_hash: string | null;
+  exit_code: number | null;
+  is_demo: boolean | null;
   started_at: Date | null;
   completed_at: Date | null;
-  exit_code: number | null;
 }
 
 export interface TestResultTable {
@@ -225,7 +229,7 @@ export interface ReviewTable {
 export interface WorkflowExecutionTable {
   id: string;
   version_id: string;
-  build_id: string;
+  build_id: string | null;
   approved_review_id: string | null;
   status: string;
   amount: string | null;
@@ -279,6 +283,6 @@ export interface ActivityEventTable {
   entity_type: string | null;
   entity_id: string | null;
   workflow_version: string | null;
-  metadata: any | null; // jsonb
+  metadata: Generated<any | null>; // jsonb
   timestamp: Generated<Date>;
 }

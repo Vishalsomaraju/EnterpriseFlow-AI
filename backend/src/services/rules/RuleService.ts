@@ -1,5 +1,4 @@
 import { db } from '../../db/index';
-import { RuleEngine } from '../../demo-repository/invoice-automation-baseline/src/engine'; // We will use a local implementation of the rule engine for snapshotting if available, or just mock it deterministically.
 import { ImpactAnalysisResponse, ImpactComponent } from '../../domain/impact-engine/ImpactAnalysisSchema';
 
 export class RuleService {
@@ -80,7 +79,8 @@ export class RuleService {
       message: `Impact analyzed for rule ${ruleId}`,
       source: 'SYSTEM',
       event_type: 'RULE_IMPACT_ANALYZED',
-      status: 'SUCCESS'
+      status: 'SUCCESS',
+      metadata: null
     }).execute();
 
     return {
@@ -189,7 +189,8 @@ export class RuleService {
           message: `Created version ${nextVersionNumber}`,
           source: 'SYSTEM',
           event_type: 'WORKFLOW_VERSION_CREATED',
-          status: 'SUCCESS'
+          status: 'SUCCESS',
+          metadata: null
         },
         {
           id: `act_${Date.now()}_rc`,
@@ -197,7 +198,8 @@ export class RuleService {
           message: `Rule ${ruleId} condition changed to ${newExpression}`,
           source: 'SYSTEM',
           event_type: 'RULE_CHANGED',
-          status: 'SUCCESS'
+          status: 'SUCCESS',
+          metadata: null
         }
       ]).execute();
 

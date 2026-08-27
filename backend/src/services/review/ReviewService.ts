@@ -17,7 +17,8 @@ export class ReviewService {
       message: `Review submitted by ${reviewer}`,
       source: 'REVIEW',
       event_type: 'SYSTEM',
-      status: 'SUCCESS'
+      status: 'SUCCESS',
+      metadata: null
     }).execute();
 
     return review;
@@ -72,7 +73,8 @@ export class ReviewService {
       message: `Review approved by ${review.reviewer}`,
       source: 'REVIEW',
       event_type: 'SYSTEM',
-      status: 'SUCCESS'
+      status: 'SUCCESS',
+      metadata: null
     }).execute();
 
     // Transition build
@@ -96,7 +98,8 @@ export class ReviewService {
       message: `Review rejected by ${review.reviewer}`,
       source: 'REVIEW',
       event_type: 'SYSTEM',
-      status: 'SUCCESS'
+      status: 'SUCCESS',
+      metadata: null
     }).execute();
   }
 }

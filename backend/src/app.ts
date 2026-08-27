@@ -5,6 +5,7 @@ import { db } from './db';
 import { config } from './config';
 import { sql } from 'kysely';
 import { documentRoutes } from './routes/projects/document.routes';
+import { projectRoutes } from './routes/projects/project.routes';
 import { jobRoutes } from './routes/jobs/job.routes';
 import { workflowRoutes } from './routes/workflows/workflow.routes';
 import { blueprintRoutes } from './routes/blueprints/blueprint.routes';
@@ -40,6 +41,7 @@ export function buildApp() {
     }
   });
 
+  app.register(projectRoutes, { prefix: '/projects' });
   app.register(documentRoutes);
   app.register(jobRoutes);
   app.register(workflowRoutes, { prefix: '/workflows' });

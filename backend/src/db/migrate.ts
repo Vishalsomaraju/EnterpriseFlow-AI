@@ -1,5 +1,6 @@
 import * as path from 'path';
 import { promises as fs } from 'fs';
+import { pathToFileURL } from 'url';
 import {
   Migrator,
   FileMigrationProvider,
@@ -7,15 +8,26 @@ import {
 import { db } from './index';
 
 async function migrateToLatest() {
-  const migrator = new Migrator({
-    db,
-    provider: new FileMigrationProvider({
-      fs,
-      path,
-      // This needs to point to the migrations directory
-      migrationFolder: path.join(__dirname, 'migrations'),
-    }),
-  });
+  const migrationsPath = path.join(process.cwd(), 'src', 'db', 'migrations');
+
+  // Custom provider that uses file:// URLs for Windows ESM compatibility
+  const provider: any = {
+    getMigrations: async () => {
+      const migrations: Record<string, any> = {};
+      const files = await fs.readdir(migrationsPath);
+      for (const file of files.sort()) {
+        if (!file.endsWith('.ts') && !file.endsWith('.js')) continue;
+        const filePath = path.join(migrationsPath, file);
+        const fileUrl = pathToFileURL(filePath).href;
+        const mod = await import(fileUrl);
+        const name = file.replace(/\.(ts|js)$/, '');
+        migrations[name] = mod;
+      }
+      return migrations;
+    }
+  };
+
+  const migrator = new Migrator({ db, provider });
 
   const { error, results } = await migrator.migrateToLatest();
 

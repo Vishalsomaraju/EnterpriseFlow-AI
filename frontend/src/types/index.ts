@@ -155,6 +155,8 @@ export interface TestRun {
   name: string;
   status: TestStatus;
   durationMs: number;
+  mode?: 'REAL' | 'DEMO';
+  isDemo?: boolean;
 }
 
 export interface ReviewSummary {

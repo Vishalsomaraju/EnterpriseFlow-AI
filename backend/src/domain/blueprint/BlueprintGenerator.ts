@@ -1,5 +1,5 @@
 import { AutomationBlueprint, BlueprintActor, BlueprintBusinessRule, BlueprintIntegration, BlueprintNode, BlueprintTransition } from './types';
-import { EngineNode, EngineEdge, EngineRule } from '../workflow-engine/types';
+import { DomainNode, DomainEdge, DomainRule } from '../workflow-engine/types';
 
 export interface WorkflowContext {
   workflow: {
@@ -15,9 +15,9 @@ export interface WorkflowContext {
 export class BlueprintGenerator {
   public static generate(
     context: WorkflowContext,
-    nodes: EngineNode[],
-    edges: EngineEdge[],
-    rules: EngineRule[]
+    nodes: DomainNode[],
+    edges: DomainEdge[],
+    rules: DomainRule[]
   ): AutomationBlueprint {
     const blueprintActors: BlueprintActor[] = context.actors.map(a => ({
       id: a.id,
@@ -33,7 +33,7 @@ export class BlueprintGenerator {
       automated: n.automated,
       inputs: n.inputs ? Object.keys(n.inputs) : [],
       outputs: n.outputs ? Object.keys(n.outputs) : [],
-      ruleIds: n.ruleIds
+      ruleIds: n.ruleIds || []
     }));
 
     const blueprintTransitions: BlueprintTransition[] = edges.map(e => ({
