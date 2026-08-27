@@ -58,7 +58,37 @@ export interface BuildChanges {
   files_changed: number;
 }
 
+export interface ImpactComponent {
+  id: string;
+  type: string;
+  name: string;
+  reason: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  previousState?: string;
+  newRequiredState?: string;
+}
+
+export interface RuleBeforeAfterEvaluation {
+  input: any;
+  before?: string;
+  after?: string;
+}
+
 export interface ImpactAnalysisResult {
+  rule?: {
+    id: string;
+    oldExpression: string;
+    newExpression: string;
+  };
+  directImpact?: ImpactComponent[];
+  downstreamImpact?: ImpactComponent[];
+  risk?: {
+    level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    reason: string;
+  };
+  evaluation?: RuleBeforeAfterEvaluation;
+
+  // Legacy arrays
   affected_files: string[];
   affected_tests: string[];
   affected_nodes: string[];

@@ -1,0 +1,13 @@
+{
+  "name": "invoice-automation",
+  "version": "1.0.0",
+  "description": "Invoice Engine",
+  "main": "src/engine.js",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0",
+    "typescript": "^5.0.0"
+  }
+}
