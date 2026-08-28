@@ -30,11 +30,11 @@ describe('Negative Paths Integration Tests', () => {
     }).onConflict((oc) => oc.doNothing()).execute();
 
     await db.insertInto('blueprints').values({
-      id: '00000000-0000-0000-0000-000000000099',
       workflow_version_id: '00000000-0000-0000-0000-000000000099',
       schema_json: {},
-      validation_status: 'VALID'
-    }).onConflict((oc) => oc.doNothing()).execute();
+      validation_status: 'VALID',
+      validation_errors: null
+    }).execute();
   });
 
   afterAll(async () => {
@@ -44,13 +44,12 @@ describe('Negative Paths Integration Tests', () => {
   });
 
   async function createTestBuild(status = 'READY_FOR_REVIEW') {
-    const buildId = `00000000-0000-0000-0000-1111111111${Math.floor(Math.random() * 90) + 10}`;
-    await db.insertInto('builds').values({
-      id: buildId,
-      blueprint_id: '00000000-0000-0000-0000-000000000099',
+    const blueprint = await db.selectFrom('blueprints').where('workflow_version_id', '=', '00000000-0000-0000-0000-000000000099').selectAll().executeTakeFirst();
+    const build = await db.insertInto('builds').values({
+      blueprint_id: blueprint?.id || '00000000-0000-0000-0000-000000000099',
       status,
-    }).execute();
-    return buildId;
+    }).returning('id').executeTakeFirstOrThrow();
+    return build.id;
   }
 
   async function setupReview(buildId: string) {
@@ -111,7 +110,6 @@ describe('Negative Paths Integration Tests', () => {
 
     // Insert passing documentation
     await db.insertInto('documentation_artifacts').values({
-      id: '00000000-0000-0000-0000-222222222222',
       build_id: buildId,
       title: 'Docs',
       content: 'Docs'
@@ -135,9 +133,9 @@ describe('Negative Paths Integration Tests', () => {
       url: `/reviews/${reviewId}/approve`,
     });
 
-    expect(response.statusCode).toBe(400);
+    expect(response.statusCode).toBe(403);
     const body = JSON.parse(response.payload);
-    expect(body.error.message).toContain('Cannot approve: SecurePush blocked changes');
+    expect(body.error.message).toContain('SecurePush BLOCKED');
   });
 
   it('Review REJECT -> build FAILED', async () => {

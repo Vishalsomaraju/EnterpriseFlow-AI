@@ -41,6 +41,13 @@ export const BobChangesSchema = BobIdentitySchema.extend({
   files: z.array(BobChangedFileSchema)
 });
 
+export const BobIndividualTestResultSchema = z.object({
+  test_name: z.string(),
+  status: z.enum(['Passed', 'Failed', 'passed', 'failed']),
+  duration_ms: z.number().optional(),
+  error_output: z.string().nullable().optional(),
+});
+
 export const BobTestResultSchema = BobIdentitySchema.extend({
   test_run_id: z.string(),
   name: z.string(),
@@ -48,5 +55,17 @@ export const BobTestResultSchema = BobIdentitySchema.extend({
   passed: z.number().int().min(0),
   failed: z.number().int().min(0),
   duration_ms: z.number().int().min(0),
-  status: z.enum(['Passed', 'Failed'])
+  status: z.enum(['Passed', 'Failed', 'PASS', 'FAIL']),
+  individual_results: z.array(BobIndividualTestResultSchema).optional()
+});
+
+export const BobDocumentationArtifactSchema = z.object({
+  title: z.string(),
+  content: z.string(),
+  path: z.string().optional(),
+  artifact_type: z.string().optional(),
+});
+
+export const BobDocumentationSchema = BobIdentitySchema.extend({
+  artifacts: z.array(BobDocumentationArtifactSchema),
 });

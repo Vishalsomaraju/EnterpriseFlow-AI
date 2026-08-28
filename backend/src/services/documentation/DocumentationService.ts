@@ -34,6 +34,11 @@ export class DocumentationService {
 
     if (docsToSave.length > 0) {
       await db.insertInto('documentation_artifacts').values(docsToSave).execute();
+      
+      const { EvidenceWriter } = await import('../build/EvidenceWriter');
+      for (const doc of docsToSave) {
+        await EvidenceWriter.writeDocumentation(buildId, doc);
+      }
     }
   }
 

@@ -1,0 +1,8 @@
+{
+  "approvalThreshold": 500000,
+  "currency": "INR",
+  "version": 1,
+  "ruleId": "placeholder",
+  "condition": "amount >= 500000",
+  "_comment": "This file is the SINGLE SOURCE OF TRUTH for business rules. Written by EnterpriseFlow before Bob runs. Do not hardcode these values in source code — read from this file at runtime."
+}

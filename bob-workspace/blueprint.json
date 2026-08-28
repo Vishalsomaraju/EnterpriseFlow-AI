@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "workflow": {
+    "id": "0b077677-ab45-4c88-80ba-12029ebe4f49",
+    "version": 2,
+    "name": "Auto-Extracted Workflow"
+  },
+  "actors": [],
+  "nodes": [
+    {
+      "id": "3e039404-e1b9-45be-b54b-443321053ac2_v2",
+      "type": "START",
+      "name": "Submit Invoice",
+      "automated": false,
+      "inputs": [],
+      "outputs": [],
+      "ruleIds": [
+        "690128fa-7c22-4194-89de-88b32466d901_v2"
+      ]
+    },
+    {
+      "id": "66b343ad-ac66-49ee-92a7-8ce410c89164_v2",
+      "type": "INTERMEDIATE",
+      "name": "Finance Manager",
+      "automated": false,
+      "inputs": [],
+      "outputs": [],
+      "ruleIds": []
+    },
+    {
+      "id": "a84932ca-c31c-4a3e-b555-5d01102298a6_v2",
+      "type": "TERMINAL",
+      "name": "CFO",
+      "automated": false,
+      "inputs": [],
+      "outputs": [],
+      "ruleIds": []
+    }
+  ],
+  "transitions": [
+    {
+      "sourceId": "3e039404-e1b9-45be-b54b-443321053ac2_v2",
+      "targetId": "66b343ad-ac66-49ee-92a7-8ce410c89164_v2",
+      "type": "BRANCH",
+      "condition": "amount < 500000"
+    },
+    {
+      "sourceId": "3e039404-e1b9-45be-b54b-443321053ac2_v2",
+      "targetId": "a84932ca-c31c-4a3e-b555-5d01102298a6_v2",
+      "type": "BRANCH",
+      "condition": "amount >= 500000"
+    }
+  ],
+  "businessRules": [
+    {
+      "id": "690128fa-7c22-4194-89de-88b32466d901_v2",
+      "name": "Amount Threshold",
+      "description": "No description",
+      "condition": "amount >= 1000000"
+    }
+  ],
+  "integrations": [],
+  "acceptanceCriteria": [
+    "Rule 690128fa-7c22-4194-89de-88b32466d901_v2: When amount >= 1000000 then continue"
+  ]
+}

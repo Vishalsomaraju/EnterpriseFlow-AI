@@ -16,7 +16,13 @@ export const reviewRoutes: FastifyPluginAsync = async (app) => {
       await reviewService.approveReview(request.params.id);
       return reply.send({ success: true });
     } catch (err: any) {
-      return reply.status(400).send({ error: { message: err.message } });
+      const statusCode = err.statusCode || 400;
+      return reply.status(statusCode).send({
+        error: {
+          code: err.code || 'APPROVAL_ERROR',
+          message: err.message,
+        },
+      });
     }
   });
 

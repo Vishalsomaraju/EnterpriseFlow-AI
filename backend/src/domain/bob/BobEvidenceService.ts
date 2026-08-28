@@ -41,6 +41,9 @@ export class BobEvidenceService {
           .execute();
       }
     });
+
+    const { EvidenceWriter } = await import('../../services/build/EvidenceWriter');
+    await EvidenceWriter.writeActivity(data.build_id, data);
   }
 
   async processPlan(payload: unknown) {
@@ -83,6 +86,9 @@ export class BobEvidenceService {
         .where('id', '=', data.build_id)
         .execute();
     });
+
+    const { EvidenceWriter } = await import('../../services/build/EvidenceWriter');
+    await EvidenceWriter.writePlan(data.build_id, data);
   }
 
   async processChanges(payload: unknown) {
@@ -100,9 +106,6 @@ export class BobEvidenceService {
 
       if (existing) return;
 
-      // Note: In a real system, cryptographic/file integrity would happen here
-      // against the actual workspace manifest and physical diff files.
-      
       for (const file of data.files) {
         await trx.insertInto('build_changes')
           .values({
@@ -131,6 +134,11 @@ export class BobEvidenceService {
       shouldTriggerLifecycle = true;
     });
 
+    const { EvidenceWriter } = await import('../../services/build/EvidenceWriter');
+    for (const file of data.files) {
+      await EvidenceWriter.writeChange(data.build_id, file);
+    }
+
     if (shouldTriggerLifecycle) {
       // Defer to LifecycleOrchestrator to take over (SecurePush, Tests, etc)
       lifecycleOrchestrator.onChangesReceived(data.build_id).catch(console.error);
@@ -151,24 +159,74 @@ export class BobEvidenceService {
 
       if (existing) return;
 
+      const normalizedStatus = data.status === 'Passed' || data.status === 'PASS' ? 'PASS' : 'FAIL';
+
       await trx.insertInto('test_runs')
         .values({
           id: data.test_run_id,
           build_id: data.build_id,
-          name: data.test_run_id,
+          name: data.name || data.test_run_id,
           total_tests: data.total_tests,
           passed: data.passed,
           failed: data.failed,
           duration_ms: data.duration_ms,
-          status: data.status
+          status: normalizedStatus
         })
         .execute();
+
+      if (data.individual_results && data.individual_results.length > 0) {
+        const resultsToInsert = data.individual_results.map(r => ({
+          test_run_id: data.test_run_id,
+          build_id: data.build_id,
+          test_name: r.test_name,
+          status: r.status.toUpperCase(),
+          duration_ms: r.duration_ms || null,
+          error_output: r.error_output || null
+        }));
+        await trx.insertInto('test_results').values(resultsToInsert).execute();
+      }
         
       shouldTriggerLifecycle = true;
     });
 
+    const { EvidenceWriter } = await import('../../services/build/EvidenceWriter');
+    await EvidenceWriter.writeTestRun(data.build_id, data);
+
     if (shouldTriggerLifecycle) {
       lifecycleOrchestrator.onTestsReceived(data.build_id).catch(console.error);
+    }
+  }
+
+  async processDocumentation(payload: unknown) {
+    const { BobDocumentationSchema } = await import('./BobIngestionSchemas');
+    const data = BobDocumentationSchema.parse(payload);
+
+    await db.transaction().execute(async (trx) => {
+      for (const artifact of data.artifacts) {
+        await trx.insertInto('documentation_artifacts')
+          .values({
+            build_id: data.build_id,
+            title: artifact.title,
+            content: artifact.content,
+            path: artifact.path || null,
+            artifact_type: artifact.artifact_type || 'README'
+          })
+          .execute();
+      }
+
+      await trx.insertInto('bob_activity_events')
+        .values({
+          build_id: data.build_id,
+          event_type: 'DOCS_RECEIVED',
+          message: `Received ${data.artifacts.length} documentation artifacts.`,
+          metadata: { bob_session_id: data.bob_session_id }
+        })
+        .execute();
+    });
+
+    const { EvidenceWriter } = await import('../../services/build/EvidenceWriter');
+    for (const doc of data.artifacts) {
+      await EvidenceWriter.writeDocumentation(data.build_id, doc);
     }
   }
 }

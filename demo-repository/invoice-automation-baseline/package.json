@@ -1,13 +1,17 @@
 {
   "name": "invoice-automation",
   "version": "1.0.0",
-  "description": "Invoice Engine",
-  "main": "src/engine.js",
+  "description": "Acme Corp Invoice Automation — baseline implementation with known deficiencies. Bob's task is to implement the full acceptance criteria.",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "vitest": "^1.0.0",
-    "typescript": "^5.0.0"
+    "vitest": "^1.6.0",
+    "typescript": "^5.4.5",
+    "@types/node": "^20.14.0"
   }
 }

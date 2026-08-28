@@ -1,10 +1,17 @@
 {
-  "buildId": "038db905-5fc1-4eff-9506-0127c3303a03",
-  "workflowId": "93a8c454-569e-4bd8-86e4-3257424afd1a",
-  "workflowVersionId": "ddfcbe1a-7f53-490f-8282-d07552b2239d",
-  "blueprintId": "ead40079-3d58-4013-a07b-2704273c611e",
-  "bobSessionId": "bob-sess-1787845484964",
+  "buildId": "build-1787912646223",
+  "workflowId": "0b077677-ab45-4c88-80ba-12029ebe4f49",
+  "workflowVersionId": "0c4fb782-7aa1-4fab-83df-7478986f8721",
+  "blueprintId": "af54f06e-1cbb-4d02-ad7b-731b34b49053",
+  "bobSessionId": "bob-sess-1787912646223",
   "repository": "E:\\EnterpriseFlow\\demo-repository\\invoice-automation",
-  "createdAt": "2026-08-27T15:44:44.967Z",
-  "schemaVersion": "1.0"
+  "evidenceEndpoints": {
+    "events": "http://localhost:3001/api/v1/builds/build-1787912646223/bob/events",
+    "plan": "http://localhost:3001/api/v1/builds/build-1787912646223/bob/plan",
+    "changes": "http://localhost:3001/api/v1/builds/build-1787912646223/bob/changes",
+    "tests": "http://localhost:3001/api/v1/builds/build-1787912646223/bob/tests",
+    "documentation": "http://localhost:3001/api/v1/builds/build-1787912646223/bob/documentation"
+  },
+  "createdAt": "2026-08-28T10:24:06.555Z",
+  "schemaVersion": "2.0"
 }

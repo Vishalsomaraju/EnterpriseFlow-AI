@@ -87,9 +87,17 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
         .where('build_id', '=', request.params.id)
         .selectAll()
         .execute();
-      
+
       const patch = changes.map(c => `--- a/${c.file_path}\n+++ b/${c.file_path}\n${c.diff}`).join('\n');
-      return reply.send({ diff: patch, files_changed: changes.length });
+      return reply.send({
+        diff: patch,
+        files_changed: changes.length,
+        files: changes.map(c => ({
+          file_path: c.file_path,
+          change_type: c.change_type,
+          diff: c.diff || '',
+        })),
+      });
     } catch (err) {
       return reply.status(500).send({ error: 'INTERNAL_ERROR' });
     }
@@ -103,14 +111,22 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
         .selectAll()
         .execute();
 
-      if (testRuns.length > 0) {
-        const results = await db.selectFrom('test_results')
-          .where('test_run_id', '=', testRuns[0].id)
-          .selectAll()
-          .execute();
-        return reply.send({ ...testRuns[0], results });
+      // Always return { testRuns: [] } wrapper so frontend shape is consistent
+      if (testRuns.length === 0) {
+        return reply.send({ testRuns: [] });
       }
-      return reply.send(null);
+
+      const results = await db.selectFrom('test_results')
+        .where('test_run_id', '=', testRuns[0].id)
+        .selectAll()
+        .execute();
+
+      return reply.send({
+        testRuns: testRuns.map((tr, i) => ({
+          ...tr,
+          results: i === 0 ? results : [],
+        })),
+      });
     } catch (err) {
       return reply.status(500).send({ error: 'INTERNAL_ERROR' });
     }
@@ -156,10 +172,11 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
 
       return reply.send({
         status: scan.status,
+        riskScore: scan.risk_score ?? 0,
         critical: scan.critical,
         high: scan.high,
         medium: scan.medium,
-        low: scan.low
+        low: scan.low,
       });
     } catch (err) {
       return reply.status(500).send({ error: 'INTERNAL_ERROR' });

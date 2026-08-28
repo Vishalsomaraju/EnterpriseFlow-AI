@@ -51,10 +51,16 @@ export class ReviewService {
     const docs = await db.selectFrom('documentation_artifacts').where('build_id', '=', review.build_id).selectAll().execute();
     if (docs.length === 0) throw new Error('Cannot approve: documentation missing');
 
-    // Verify secure push was PASS/WARN (We assume it was, since status reached READY_FOR_REVIEW, but we check explicitly)
+    // Verify SecurePush was PASS or WARN — BLOCK is a hard gate
     const secureScan = await db.selectFrom('security_scans').where('build_id', '=', review.build_id).selectAll().executeTakeFirst();
-    if (!secureScan || secureScan.status === 'BLOCK') {
-      throw new Error('Cannot approve: SecurePush blocked changes');
+    if (!secureScan) {
+      throw Object.assign(new Error('Cannot approve: SecurePush scan not completed'), { code: 'SECURITY_SCAN_REQUIRED', statusCode: 400 });
+    }
+    if (secureScan.status === 'BLOCK') {
+      throw Object.assign(
+        new Error(`Cannot approve: SecurePush BLOCKED changes. Risk score: ${secureScan.risk_score ?? 'unknown'}/100. Fix critical findings first.`),
+        { code: 'APPROVAL_BLOCKED', statusCode: 403 }
+      );
     }
 
     // Verify blueprint valid
