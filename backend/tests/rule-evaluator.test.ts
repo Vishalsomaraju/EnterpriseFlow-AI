@@ -23,4 +23,41 @@ describe('RuleEvaluator', () => {
       request: { amount: 150000, currency: 'INR' }
     }).matched).toBe(true);
   });
+
+  describe('Semantic Parsing', () => {
+    test('safely parses a simple less-than expression', () => {
+      const result = RuleEvaluator.parseExpression('amount < 500000');
+      expect(result).not.toBeNull();
+      expect(result?.field).toBe('amount');
+      expect(result?.operator).toBe('<');
+      expect(result?.value).toBe(500000);
+    });
+
+    test('safely parses other numeric operators', () => {
+      expect(RuleEvaluator.parseExpression('amount <= 500000')?.operator).toBe('<=');
+      expect(RuleEvaluator.parseExpression('amount > 500000')?.operator).toBe('>');
+      expect(RuleEvaluator.parseExpression('amount >= 500000')?.operator).toBe('>=');
+    });
+
+    test('ignores whitespace', () => {
+      const result = RuleEvaluator.parseExpression('  amount   <=   100 ');
+      expect(result).not.toBeNull();
+      expect(result?.field).toBe('amount');
+      expect(result?.value).toBe(100);
+    });
+
+    test('returns null for complex expressions', () => {
+      expect(RuleEvaluator.parseExpression('amount < 500000 && role === "admin"')).toBeNull();
+      expect(RuleEvaluator.parseExpression('amount < 500000 || amount > 1000000')).toBeNull();
+    });
+
+    test('returns null for non-threshold operators', () => {
+      expect(RuleEvaluator.parseExpression('role === "admin"')).toBeNull();
+      expect(RuleEvaluator.parseExpression('role !== "user"')).toBeNull();
+    });
+
+    test('returns null for non-numeric values', () => {
+      expect(RuleEvaluator.parseExpression('amount < "five"')).toBeNull();
+    });
+  });
 });

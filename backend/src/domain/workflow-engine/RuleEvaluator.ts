@@ -63,6 +63,27 @@ export class RuleEvaluator {
     return { matched, field, operator, expected, actual };
   }
 
+  static parseExpression(expression: string): { field: string; operator: string; value: number } | null {
+    const normalized = expression.trim();
+    if (normalized.includes('&&') || normalized.includes('||')) {
+      return null;
+    }
+    const match = normalized.match(/^([A-Za-z_][\w.]*)\s*(===|==|!=|!==|>=|<=|>|<)\s*(.+)$/);
+    if (!match) return null;
+    
+    const [, field, operator, rawExpected] = match;
+    if (!['<', '<=', '>', '>='].includes(operator)) {
+      return null;
+    }
+    
+    const expectedValue = Number(rawExpected.trim());
+    if (Number.isNaN(expectedValue)) {
+      return null;
+    }
+
+    return { field, operator, value: expectedValue };
+  }
+
   private static split(expression: string, separator: string): string[] {
     return expression.split(separator).map(part => part.trim()).filter(Boolean);
   }

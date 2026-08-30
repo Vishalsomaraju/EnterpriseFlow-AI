@@ -59,6 +59,15 @@ export interface ImpactAnalysisResponse {
     reason: string;
   };
   evaluation?: RuleBeforeAfterEvaluation;
+  semantic?: {
+    isThresholdChange: boolean;
+    oldThreshold?: number;
+    newThreshold?: number;
+    delta?: number;
+    affectedRange?: string;
+    businessImpact: string;
+    reviewerChecks: string[];
+  };
 
   // Legacy arrays
   affected_files: string[];

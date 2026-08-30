@@ -81,6 +81,41 @@ export class RuleService {
     if (changed && directImpact.length > 0) highestSeverity = 'HIGH';
     else if (!changed) highestSeverity = 'LOW';
 
+    let semantic: ImpactAnalysisResponse['semantic'] = undefined;
+    if (changed) {
+      const oldParsed = RuleEvaluator.parseExpression(rule.condition);
+      const newParsed = RuleEvaluator.parseExpression(proposedExpression);
+
+      if (oldParsed && newParsed && oldParsed.field === newParsed.field) {
+        const lower = Math.min(oldParsed.value, newParsed.value);
+        const upper = Math.max(oldParsed.value, newParsed.value);
+        const isIncrease = newParsed.value > oldParsed.value;
+        const delta = newParsed.value - oldParsed.value;
+
+        const isCurrency = oldParsed.field.toLowerCase().includes('amount');
+        const formatVal = (v: number) => {
+          if (isCurrency) return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(v);
+          return v.toString();
+        };
+
+        semantic = {
+          isThresholdChange: true,
+          oldThreshold: oldParsed.value,
+          newThreshold: newParsed.value,
+          delta,
+          affectedRange: `${formatVal(lower)}–${formatVal(upper)}`,
+          businessImpact: `The threshold for ${oldParsed.field} was ${isIncrease ? 'increased' : 'decreased'} by ${formatVal(Math.abs(delta))}. Values between ${formatVal(lower)} and ${formatVal(upper)} will now evaluate differently.`,
+          reviewerChecks: isIncrease ? [
+            `Verify that increasing the ${oldParsed.field} threshold does not bypass necessary compliance checks.`,
+            `Ensure downstream systems can handle the increased volume of items in this path.`
+          ] : [
+            `Verify that decreasing the ${oldParsed.field} threshold will not overwhelm reviewers with too many requests.`,
+            `Confirm this stricter policy aligns with current business risk guidelines.`
+          ]
+        };
+      }
+    }
+
     // Evaluate before/after using the stored and proposed expressions.
     let evaluation: { input: Record<string, unknown>, before?: string, after?: string } | undefined = undefined;
     if (sampleInput) {
@@ -116,6 +151,7 @@ export class RuleService {
         reason: changed ? 'Stored rule expression changed and its persisted dependencies require review.' : 'No rule change detected. No impact analysis required.'
       },
       evaluation,
+      semantic,
       affected_files: affectedFiles,
       affected_tests: affectedTests,
       affected_nodes: affectedNodes,

@@ -412,6 +412,69 @@ export function ImpactAnalysisPage() {
                 </Card>
               )}
 
+              {/* Semantic Business Impact */}
+              {impact.semantic && (
+                <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  <Card style={{ borderLeft: '4px solid var(--accent)' }}>
+                    <p className="eyebrow" style={{ color: 'var(--accent)' }}>Business Impact</p>
+                    <div style={{ marginTop: '12px', fontSize: '14px', lineHeight: 1.6, color: 'var(--text)' }} data-testid="semantic-business-impact">
+                      {impact.semantic.businessImpact}
+                    </div>
+                    
+                    <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', background: 'var(--bg)', padding: '12px', borderRadius: 'var(--radius-md)' }}>
+                      <div>
+                        <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block', textTransform: 'uppercase' }}>Old Threshold</span>
+                        <div style={{ fontWeight: 600, fontSize: '14px' }}>
+                          {(() => {
+                            const isCurrency = impact.rule?.oldExpression.toLowerCase().includes('amount');
+                            const v = impact.semantic?.oldThreshold;
+                            if (v == null) return '';
+                            return isCurrency ? v.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }) : v;
+                          })()}
+                        </div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block', textTransform: 'uppercase' }}>New Threshold</span>
+                        <div style={{ fontWeight: 600, fontSize: '14px' }}>
+                          {(() => {
+                            const isCurrency = impact.rule?.oldExpression.toLowerCase().includes('amount');
+                            const v = impact.semantic?.newThreshold;
+                            if (v == null) return '';
+                            return isCurrency ? v.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }) : v;
+                          })()}
+                        </div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block', textTransform: 'uppercase' }}>Delta</span>
+                        <div style={{ fontWeight: 600, fontSize: '14px', color: impact.semantic.delta && impact.semantic.delta > 0 ? 'var(--success)' : 'var(--danger)' }}>
+                          {(() => {
+                            const delta = impact.semantic?.delta ?? 0;
+                            const isCurrency = impact.rule?.oldExpression.toLowerCase().includes('amount');
+                            const formatted = isCurrency ? Math.abs(delta).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }) : Math.abs(delta);
+                            return delta > 0 ? `+${formatted}` : `-${formatted}`;
+                          })()}
+                        </div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '11px', color: 'var(--muted)', display: 'block', textTransform: 'uppercase' }}>Affected Range</span>
+                        <div style={{ fontWeight: 600, fontSize: '14px' }}>
+                          {impact.semantic.affectedRange}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card>
+                    <p className="eyebrow">Reviewer Recommendations</p>
+                    <ul style={{ paddingLeft: '20px', margin: '12px 0 0 20px', color: 'var(--text)', fontSize: '14px', lineHeight: 1.5 }} data-testid="semantic-reviewer-checks">
+                      {impact.semantic.reviewerChecks.map((check, idx) => (
+                        <li key={idx} style={{ marginBottom: '8px' }}>{check}</li>
+                      ))}
+                    </ul>
+                  </Card>
+                </section>
+              )}
+
               {/* Propagation graph */}
               <section style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px', height: '520px' }}>
                 <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', overflow: 'hidden' }}>

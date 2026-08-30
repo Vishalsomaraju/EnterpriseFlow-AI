@@ -6,6 +6,8 @@ dist/
 /build/
 out/
 .next/
+*.tsbuildinfo
+scratch/
 
 # Environment variables
 .env

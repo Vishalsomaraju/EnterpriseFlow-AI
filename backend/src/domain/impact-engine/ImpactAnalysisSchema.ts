@@ -32,6 +32,15 @@ export interface ImpactAnalysisResponse {
     before?: string;
     after?: string;
   };
+  semantic?: {
+    isThresholdChange: boolean;
+    oldThreshold?: number;
+    newThreshold?: number;
+    delta?: number;
+    affectedRange?: string;
+    businessImpact: string;
+    reviewerChecks: string[];
+  };
   affected_files: string[];
   affected_tests: string[];
   affected_nodes: string[];
