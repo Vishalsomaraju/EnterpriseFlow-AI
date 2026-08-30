@@ -50,9 +50,47 @@ export class WorkflowGraphService {
 
   static async getGraph(workflowId: string): Promise<WorkflowGraphDTO> {
     // 1. Get the active or latest version for this workflow or project ID
-    const version = await this.resolveWorkflowVersion(workflowId);
+    let version = await this.resolveWorkflowVersion(workflowId);
 
     if (!version) {
+      // Check if workflow exists in workflows table
+      const workflow = await db
+        .selectFrom('workflows')
+        .where((eb) => eb.or([
+          eb('id', '=', workflowId),
+          eb('project_id', '=', workflowId)
+        ]))
+        .orderBy('created_at', 'desc')
+        .selectAll()
+        .executeTakeFirst();
+
+      if (workflow) {
+        return {
+          status: 'DRAFT',
+          workflowName: workflow.name || undefined,
+          nodes: [],
+          edges: [],
+          rules: []
+        };
+      }
+
+      // Check if project exists in projects table
+      const project = await db
+        .selectFrom('projects')
+        .where('id', '=', workflowId)
+        .selectAll()
+        .executeTakeFirst();
+
+      if (project) {
+        return {
+          status: 'DRAFT',
+          workflowName: project.name || undefined,
+          nodes: [],
+          edges: [],
+          rules: []
+        };
+      }
+
       throw new Error(`Workflow version not found for workflow: ${workflowId}`);
     }
 
@@ -96,6 +134,18 @@ export class WorkflowGraphService {
       };
     }
 
+    const dbActors = await db
+      .selectFrom('workflow_actors')
+      .select(['id', 'name', 'role'])
+      .where('version_id', '=', versionId)
+      .execute();
+
+    const dbSystems = await db
+      .selectFrom('workflow_systems')
+      .select(['id', 'name', 'description'])
+      .where('version_id', '=', versionId)
+      .execute();
+
     // 4. Normalize to domain models
     const { nodes, edges, rules } = GraphNormalizer.normalize(
       dbNodes.map(n => ({ ...n, kind: n.kind || 'UNKNOWN', metadata: {} })), 
@@ -109,9 +159,23 @@ export class WorkflowGraphService {
       throw new Error(`Invalid workflow graph: ${validation.errors.join('; ')}`);
     }
 
-    // 6. Translate Canonical Domain Model -> API DTO
+    // 6. Construct Bottlenecks from Decision Gates and Human Governance Checkpoints
+    const bottlenecks = nodes
+      .filter(n => !n.automated || n.type === 'DECISION')
+      .map(n => ({
+        id: `gate-${n.id}`,
+        title: n.label,
+        description: !n.automated
+          ? 'Human intervention and governance checkpoint required for verification.'
+          : 'Decision evaluation gate determining branching workflow execution paths.'
+      }));
+
+    // 7. Translate Canonical Domain Model -> API DTO
     const dto: WorkflowGraphDTO = {
       status: version.status,
+      actors: dbActors.map(a => ({ id: a.id, name: a.name, role: a.role })),
+      systems: dbSystems.map(s => ({ id: s.id, name: s.name, description: s.description })),
+      bottlenecks,
       nodes: nodes.map(n => ({
         id: n.id,
         label: n.label,

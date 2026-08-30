@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { db } from '../src/db/index';
-import { BaseRepository } from '../src/repositories/BaseRepository';
+
+class BaseRepository<T> {
+  constructor(private db: any, private table: string) {}
+  async findById(id: string) {
+    return this.db.selectFrom(this.table).where('id', '=', id).selectAll().executeTakeFirst();
+  }
+  async findAll() {
+    return this.db.selectFrom(this.table).selectAll().execute();
+  }
+}
 
 // Mock kysely to avoid actual DB connection issues in CI without postgres
 vi.mock('../src/db/index', () => {

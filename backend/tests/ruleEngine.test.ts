@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { RuleEngine } from '../src/domain/workflow/RuleEngine';
-import { EngineRule } from '../src/domain/workflow/types';
+import { RuleEngine } from '../src/domain/workflow-engine/RuleEngine';
+import { DomainRule as EngineRule } from '../src/domain/workflow-engine/types';
 
 describe('Deterministic Business Rule Engine', () => {
   it('should evaluate the exact 5 lakh boundary correctly', () => {

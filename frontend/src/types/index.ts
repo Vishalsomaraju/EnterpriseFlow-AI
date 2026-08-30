@@ -43,10 +43,31 @@ export interface WorkflowRule {
   nodeId: string;
 }
 
+export interface WorkflowActor {
+  id: string;
+  name: string;
+  role?: string | null;
+}
+
+export interface WorkflowSystem {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
+export interface WorkflowBottleneck {
+  id: string;
+  title: string;
+  description: string;
+}
+
 export interface WorkflowGraph {
   /** 'ACTIVE' | 'DRAFT' — present in the response when the version has no graph yet */
   status?: string;
   workflowName?: string;
+  actors?: WorkflowActor[];
+  systems?: WorkflowSystem[];
+  bottlenecks?: WorkflowBottleneck[];
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
   rules: WorkflowRule[];

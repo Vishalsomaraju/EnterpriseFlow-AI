@@ -1,0 +1,241 @@
+{
+  "nodes": [
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-invoice-received",
+      "name": "Invoice Received",
+      "type": "START",
+      "inputs": [],
+      "outputs": [],
+      "ruleIds": [
+        "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-1"
+      ],
+      "automated": false
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-vendor-validation",
+      "name": "Vendor Validation",
+      "type": "INTERMEDIATE",
+      "inputs": [],
+      "outputs": [],
+      "ruleIds": [
+        "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-2"
+      ],
+      "automated": false
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-duplicate-check",
+      "name": "Duplicate Check",
+      "type": "INTERMEDIATE",
+      "inputs": [],
+      "outputs": [],
+      "ruleIds": [
+        "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-3"
+      ],
+      "automated": false
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-po-matching",
+      "name": "PO Matching",
+      "type": "INTERMEDIATE",
+      "inputs": [],
+      "outputs": [],
+      "ruleIds": [
+        "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-4"
+      ],
+      "automated": false
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-approval-routing",
+      "name": "Approval Routing",
+      "type": "INTERMEDIATE",
+      "inputs": [],
+      "outputs": [],
+      "ruleIds": [
+        "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-7"
+      ],
+      "automated": false
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-erp-update",
+      "name": "ERP Update",
+      "type": "INTERMEDIATE",
+      "inputs": [],
+      "outputs": [],
+      "ruleIds": [
+        "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-8"
+      ],
+      "automated": false
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-audit-log",
+      "name": "Audit Log",
+      "type": "INTERMEDIATE",
+      "inputs": [],
+      "outputs": [],
+      "ruleIds": [],
+      "automated": false
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-amount-verification",
+      "name": "Amount Verification",
+      "type": "DECISION",
+      "inputs": [],
+      "outputs": [],
+      "ruleIds": [
+        "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-5",
+        "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-6"
+      ],
+      "automated": false
+    }
+  ],
+  "actors": [
+    {
+      "id": "00b58551-9bf3-40d6-80a6-f4707d6e80ab",
+      "name": "Employee",
+      "role": "Participant"
+    },
+    {
+      "id": "00b8088f-dde0-417c-b939-a77548b61ba8",
+      "name": "Finance Manager",
+      "role": "Participant"
+    },
+    {
+      "id": "9348a4c1-cc47-4a16-82f2-01913558bfd2",
+      "name": "CFO",
+      "role": "Participant"
+    }
+  ],
+  "workflow": {
+    "id": "bc063264-9710-404e-8a02-ea411fcfa505",
+    "name": "E2E Test Project",
+    "version": 1
+  },
+  "transitions": [
+    {
+      "type": "DEFAULT",
+      "sourceId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-invoice-received",
+      "targetId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-vendor-validation",
+      "condition": "Proceed to vendor validation"
+    },
+    {
+      "type": "DEFAULT",
+      "sourceId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-vendor-validation",
+      "targetId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-duplicate-check",
+      "condition": "Proceed to duplicate check"
+    },
+    {
+      "type": "DEFAULT",
+      "sourceId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-duplicate-check",
+      "targetId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-po-matching",
+      "condition": "Proceed to PO matching"
+    },
+    {
+      "type": "DEFAULT",
+      "sourceId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-po-matching",
+      "targetId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-amount-verification",
+      "condition": "Proceed to Amount verification"
+    },
+    {
+      "type": "BRANCH",
+      "sourceId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-amount-verification",
+      "targetId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-approval-routing",
+      "condition": "Manager Approval Rule"
+    },
+    {
+      "type": "BRANCH",
+      "sourceId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-amount-verification",
+      "targetId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-approval-routing",
+      "condition": "CFO Approval Rule"
+    },
+    {
+      "type": "DEFAULT",
+      "sourceId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-approval-routing",
+      "targetId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-erp-update",
+      "condition": "Proceed to ERP update"
+    },
+    {
+      "type": "DEFAULT",
+      "sourceId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-erp-update",
+      "targetId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-NODE-audit-log",
+      "condition": "Proceed to Audit Log"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "df6e53eb-d518-4031-9f09-847bd9fbab2c",
+      "name": "Email",
+      "description": ""
+    },
+    {
+      "id": "93a03cec-d730-4a04-a04c-e1720ea97ebd",
+      "name": "PO System",
+      "description": ""
+    },
+    {
+      "id": "81098ea4-c386-46a2-b6cc-97357dcaa2e9",
+      "name": "ERP",
+      "description": ""
+    }
+  ],
+  "businessRules": [
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-1",
+      "name": "Proceed to vendor validation",
+      "condition": "always",
+      "description": "No description"
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-2",
+      "name": "Proceed to duplicate check",
+      "condition": "always",
+      "description": "No description"
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-3",
+      "name": "Proceed to PO matching",
+      "condition": "always",
+      "description": "No description"
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-4",
+      "name": "Proceed to Amount verification",
+      "condition": "always",
+      "description": "No description"
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-5",
+      "name": "Manager Approval Rule",
+      "condition": "amount < 500000",
+      "description": "No description"
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-6",
+      "name": "CFO Approval Rule",
+      "condition": "amount >= 500000",
+      "description": "No description"
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-7",
+      "name": "Proceed to ERP update",
+      "condition": "always",
+      "description": "No description"
+    },
+    {
+      "id": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-8",
+      "name": "Proceed to Audit Log",
+      "condition": "always",
+      "description": "No description"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "acceptanceCriteria": [
+    "Rule 2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-1: When always then continue",
+    "Rule 2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-2: When always then continue",
+    "Rule 2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-3: When always then continue",
+    "Rule 2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-4: When always then continue",
+    "Rule 2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-5: When amount < 500000 then continue",
+    "Rule 2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-6: When amount >= 500000 then continue",
+    "Rule 2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-7: When always then continue",
+    "Rule 2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-8: When always then continue"
+  ]
+}

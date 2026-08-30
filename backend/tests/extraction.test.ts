@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { WorkflowNormalizer, NormalizationError } from '../src/services/WorkflowNormalizer';
+import { WorkflowNormalizer, NormalizationError } from '../src/services/workflow/WorkflowNormalizer';
 import { ExtractionOutputSchema } from '../src/schemas/extraction.schema';
 
 describe('Workflow Extraction Pipeline', () => {

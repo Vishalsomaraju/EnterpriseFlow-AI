@@ -1,0 +1,7 @@
+{
+  "approvalThreshold": 1000000,
+  "currency": "INR",
+  "version": 2,
+  "ruleId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac-RULE-1_v2",
+  "condition": "amount >= 1000000"
+}

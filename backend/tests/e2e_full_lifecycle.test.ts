@@ -27,7 +27,12 @@ describe('E2E Full Lifecycle & Invariant Audit', () => {
     
     // Clear potentially conflicting state for a clean run
     await db.deleteFrom('workflow_executions').execute();
-    await db.deleteFrom('projects').where('name', '=', 'E2E Test Project').execute();
+    const existingProjects = await db.selectFrom('projects').where('name', '=', 'E2E Test Project').select('id').execute();
+    if (existingProjects.length > 0) {
+      const ids = existingProjects.map(p => p.id);
+      await db.deleteFrom('activity_events').where('project_id', 'in', ids).execute();
+      await db.deleteFrom('projects').where('id', 'in', ids).execute();
+    }
     
     // Create base project
     const project = await db.insertInto('projects').values({

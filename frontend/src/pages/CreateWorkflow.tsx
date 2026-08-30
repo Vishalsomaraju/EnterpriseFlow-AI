@@ -15,7 +15,11 @@ export function CreateWorkflowPage() {
 
   const handleSaveDraft = () => {
     if (name.trim()) {
-      createProject.mutate(name.trim(), {
+      createProject.mutate({
+        name: name.trim(),
+        description: description.trim(),
+        filename: file?.name
+      }, {
         onSuccess: () => navigate('/app/workflows')
       });
     } else {
@@ -25,11 +29,18 @@ export function CreateWorkflowPage() {
 
   const handleAnalyze = () => {
     if (name.trim()) {
-      createProject.mutate(name.trim(), {
-        onSuccess: () => navigate('/app/workflows/0bc69865-15e0-4f30-af96-6227abee5e6c/analysis')
+      createProject.mutate({
+        name: name.trim(),
+        description: description.trim(),
+        filename: file?.name
+      }, {
+        onSuccess: (result: any) => {
+          const workflowId = result?.workflowId || result?.workflow_id || result?.id;
+          navigate(`/app/workflows/${workflowId}/analysis`);
+        }
       });
     } else {
-      navigate('/app/workflows/0bc69865-15e0-4f30-af96-6227abee5e6c/analysis');
+      navigate('/app/workflows');
     }
   };
 

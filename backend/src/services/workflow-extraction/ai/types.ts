@@ -1,5 +1,6 @@
 export interface ExtractionInput {
   documentId?: string;
+  filename?: string;
   textContent?: string;
   scenario?: string; // used for testing or bypassing live LLM
 }

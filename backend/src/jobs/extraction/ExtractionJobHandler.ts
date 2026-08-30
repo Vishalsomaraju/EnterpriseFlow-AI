@@ -15,28 +15,8 @@ export class ExtractionJobHandler {
       const doc = await db.selectFrom('documents').selectAll().where('id', '=', documentId).executeTakeFirst();
       if (!doc) throw new Error('Document not found');
       
-      let workflowVersionId: string;
-      if (doc.workflow_id) {
-        // If it already extracted previously and got a workflow_id, reuse the latest version
-        const wv = await db.selectFrom('workflow_versions')
-          .select('id')
-          .where('workflow_id', '=', doc.workflow_id)
-          .orderBy('version', 'desc')
-          .executeTakeFirst();
-        workflowVersionId = wv!.id;
-      } else {
-        // Run actual extraction
-        const workflowData = await ExtractionService.extract(documentId);
-        // The service already created the workflow, node, edges, rules, etc.
-        // It returns the workflow version ID implicitly inside the result (or we look it up)
-        const updatedDoc = await db.selectFrom('documents').selectAll().where('id', '=', documentId).executeTakeFirst();
-        const wv = await db.selectFrom('workflow_versions')
-          .select('id')
-          .where('workflow_id', '=', updatedDoc!.workflow_id!)
-          .orderBy('version', 'desc')
-          .executeTakeFirst();
-        workflowVersionId = wv!.id;
-      }
+      // Run actual extraction
+      const result = await ExtractionService.extract(documentId, jobId);
 
       // Step 3: Validating
       await JobService.updateStage(jobId, ExtractionStages[3].name, ExtractionStages[3].progress);
@@ -45,7 +25,7 @@ export class ExtractionJobHandler {
       const finalDoc = await db.selectFrom('documents').select('workflow_id').where('id', '=', documentId).executeTakeFirst();
       
       await db.updateTable('jobs')
-        .set({ resource_id: finalDoc!.workflow_id })
+        .set({ resource_id: finalDoc?.workflow_id || result.workflowVersionId })
         .where('id', '=', jobId)
         .execute();
 

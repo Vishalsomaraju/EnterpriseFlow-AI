@@ -3,6 +3,21 @@ export interface WorkflowGraphDTO {
   status?: string;
   /** Human-readable workflow name, included for DRAFT empty-graph responses */
   workflowName?: string;
+  actors?: {
+    id: string;
+    name: string;
+    role?: string | null;
+  }[];
+  systems?: {
+    id: string;
+    name: string;
+    description?: string | null;
+  }[];
+  bottlenecks?: {
+    id: string;
+    title: string;
+    description: string;
+  }[];
   nodes: {
     id: string;
     label: string;

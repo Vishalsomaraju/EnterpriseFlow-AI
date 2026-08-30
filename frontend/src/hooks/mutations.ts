@@ -4,7 +4,12 @@ import { api } from '../api';
 export function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => api.createProject(name),
+    mutationFn: (payload: string | { name: string; description?: string; filename?: string }) => {
+      if (typeof payload === 'string') {
+        return api.createProject(payload);
+      }
+      return api.createProject(payload.name, payload.description, payload.filename);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });

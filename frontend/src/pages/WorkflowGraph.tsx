@@ -154,15 +154,12 @@ export function WorkflowGraphPage() {
       {totalSteps === 0 ? (
         <div style={{ marginTop: '24px' }}>
           <EmptyState
-            title={
-              graphData?.status === 'DRAFT'
-                ? `"${graphData?.workflowName || 'This workflow'}" is a Draft`
-                : 'No workflow nodes found'
-            }
-            description={
-              graphData?.status === 'DRAFT'
-                ? 'This workflow version is in DRAFT state and has no graph nodes persisted yet. Add steps to the workflow to see the graph here.'
-                : 'This workflow version has no state machine nodes mapped yet.'
+            title="Workflow graph is not available yet"
+            description="Complete workflow extraction or add workflow steps to generate the state machine graph."
+            action={
+              <Link to={`/app/workflows/${id}/analysis`}>
+                <Button variant="secondary">Back to Analysis</Button>
+              </Link>
             }
           />
         </div>

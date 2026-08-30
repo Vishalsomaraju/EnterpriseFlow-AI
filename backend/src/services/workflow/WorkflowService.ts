@@ -9,17 +9,19 @@ export class WorkflowService {
     data: ValidatedExtractionOutput
   ): Promise<string> {
     return await db.transaction().execute(async (trx) => {
-      // 1. Get project ID if document exists
+      // 1. Get project ID and existing workflow ID if document exists
       let projectId: string | null = null;
+      let workflowId: string | null = null;
       if (documentId) {
         const doc = await trx
           .selectFrom('documents')
-          .select('project_id')
+          .select(['project_id', 'workflow_id'])
           .where('id', '=', documentId)
           .executeTakeFirst();
         
         if (doc) {
           projectId = doc.project_id;
+          workflowId = doc.workflow_id;
         }
       }
 
@@ -41,26 +43,50 @@ export class WorkflowService {
         }
       }
 
-      // 2. Create Workflow
-      const workflowId = uuidv4();
-      await trx.insertInto('workflows')
-        .values({
-          id: workflowId,
-          project_id: projectId,
-          name: data.name
-        })
-        .execute();
+      // 2. Create Workflow if not already existing
+      if (!workflowId) {
+        workflowId = uuidv4();
+        await trx.insertInto('workflows')
+          .values({
+            id: workflowId,
+            project_id: projectId!,
+            name: data.name
+          })
+          .execute();
+      } else {
+        await trx.updateTable('workflows')
+          .set({ name: data.name })
+          .where('id', '=', workflowId)
+          .execute();
+      }
 
-      // 3. Create Workflow Version
-      const versionId = uuidv4();
-      await trx.insertInto('workflow_versions')
-        .values({
-          id: versionId,
-          workflow_id: workflowId,
-          version: 1,
-          status: 'DRAFT'
-        })
-        .execute();
+      // 3. Create or reuse Workflow Version
+      const existingVersion = await trx
+        .selectFrom('workflow_versions')
+        .where('workflow_id', '=', workflowId)
+        .orderBy('version', 'desc')
+        .selectAll()
+        .executeTakeFirst();
+
+      let versionId: string;
+      if (existingVersion) {
+        versionId = existingVersion.id;
+        await trx.deleteFrom('workflow_nodes').where('version_id', '=', versionId).execute();
+        await trx.deleteFrom('workflow_edges').where('version_id', '=', versionId).execute();
+        await trx.deleteFrom('workflow_actors').where('version_id', '=', versionId).execute();
+        await trx.deleteFrom('workflow_systems').where('version_id', '=', versionId).execute();
+        await trx.deleteFrom('business_rules').where('version_id', '=', versionId).execute();
+      } else {
+        versionId = uuidv4();
+        await trx.insertInto('workflow_versions')
+          .values({
+            id: versionId,
+            workflow_id: workflowId,
+            version: 1,
+            status: 'DRAFT'
+          })
+          .execute();
+      }
 
       // 4. Update Document
       if (documentId) {
@@ -92,11 +118,14 @@ export class WorkflowService {
       }
 
       // 6. Nodes (Steps + Decisions)
+      const nodeIdMap = new Map<string, string>();
       const steps = data.steps || [];
       for (const step of steps) {
+        const scopedId = `${versionId}-${step.id}`;
+        nodeIdMap.set(step.id, scopedId);
         await trx.insertInto('workflow_nodes')
           .values({
-            id: step.id,
+            id: scopedId,
             version_id: versionId,
             name: step.name,
             type: step.type,
@@ -107,9 +136,11 @@ export class WorkflowService {
 
       const decisions = data.decisions || [];
       for (const decision of decisions) {
+        const scopedId = `${versionId}-${decision.id}`;
+        nodeIdMap.set(decision.id, scopedId);
         await trx.insertInto('workflow_nodes')
           .values({
-            id: decision.id,
+            id: scopedId,
             version_id: versionId,
             name: decision.name,
             type: 'DECISION',
@@ -121,38 +152,42 @@ export class WorkflowService {
       // 7. Rules and Edges
       const rules = data.rules || [];
       for (const rule of rules) {
-        const ruleId = rule.id;
+        const scopedRuleId = `${versionId}-${rule.id}`;
+        const scopedSourceId = nodeIdMap.get(rule.source_node_id) || rule.source_node_id;
+        const scopedDecisionId = rule.decision_node_id ? (nodeIdMap.get(rule.decision_node_id) || rule.decision_node_id) : undefined;
         
         await trx.insertInto('business_rules')
           .values({
-            id: ruleId,
+            id: scopedRuleId,
             version_id: versionId,
             name: rule.name || 'Rule',
             condition: rule.expression,
-            node_id: rule.decision_node_id || rule.source_node_id,
+            node_id: scopedDecisionId || scopedSourceId,
           })
           .execute();
 
         const targets = Array.isArray(rule.target_node_id) ? rule.target_node_id : [rule.target_node_id];
         
         for (const target of targets) {
+          const scopedTargetId = nodeIdMap.get(target) || target;
+          
           // Rule dependency
           await trx.insertInto('rule_dependencies')
             .values({
-              business_rule_id: ruleId,
+              business_rule_id: scopedRuleId,
               target_type: 'NODE',
-              target_id: target,
+              target_id: scopedTargetId,
             })
             .execute();
 
           // Edge representation
-          const edgeId = `edge-${rule.source_node_id}-${target}`;
+          const edgeId = `edge-${versionId}-${rule.id}-${target}`;
           await trx.insertInto('workflow_edges')
             .values({
               id: edgeId,
               version_id: versionId,
-              source_id: rule.source_node_id,
-              target_id: target,
+              source_id: scopedSourceId,
+              target_id: scopedTargetId,
               label: rule.name,
               is_branch: !!rule.decision_node_id,
             })

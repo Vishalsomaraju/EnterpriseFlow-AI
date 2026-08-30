@@ -11,7 +11,7 @@ export interface ApiService {
 
   // Projects
   getProjects(): Promise<Project[]>;
-  createProject(name: string): Promise<void>;
+  createProject(name: string, description?: string, filename?: string): Promise<{ id: string; name: string; created_at: string; workflowId?: string; workflow_id?: string; versionId?: string; documentId?: string }>;
 
   // Documents & Extraction
   extractDocument(id: string): Promise<AsyncJobResponse>;

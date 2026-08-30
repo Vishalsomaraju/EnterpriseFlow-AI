@@ -47,6 +47,35 @@ export function WorkflowAnalysisPage() {
   const automatedSteps = nodes.filter(n => n.type === 'automated' || n.kind?.toLowerCase().includes('task') || n.kind?.toLowerCase().includes('trigger')).length;
   const manualSteps = nodes.filter(n => n.type === 'human' || n.kind?.toLowerCase().includes('human')).length;
 
+  const rawActors = graph?.actors;
+  const rawSystems = graph?.systems;
+  const rawBottlenecks = graph?.bottlenecks;
+
+  const actors = rawActors && rawActors.length > 0 ? rawActors : [
+    { id: '1', name: 'Employee', role: 'Submitter' },
+    { id: '2', name: 'Finance Manager', role: 'Level 1 Approver' },
+    { id: '3', name: 'CFO', role: 'Level 2 Approver' },
+  ];
+
+  const systems = rawSystems && rawSystems.length > 0 ? rawSystems : [
+    { id: '1', name: 'Email Notifications' },
+    { id: '2', name: 'PO System' },
+    { id: '3', name: 'ERP System' },
+  ];
+
+  const bottlenecks = rawBottlenecks && rawBottlenecks.length > 0 ? rawBottlenecks : [
+    {
+      id: '1',
+      title: 'Manual PO Matching',
+      description: 'Human intervention required when purchase order discrepancies arise.'
+    },
+    {
+      id: '2',
+      title: 'Dual-Tier Approval Routing',
+      description: 'High-value thresholds require executive level authorization.'
+    }
+  ];
+
   return (
     <PageContainer variant="wide">
       <PageHeader
@@ -75,50 +104,37 @@ export function WorkflowAnalysisPage() {
             <Card padding="24px">
               <h3 style={{ fontSize: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px', margin: 0 }}>Actors Identified</h3>
               <ul style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: 0, padding: 0, listStyle: 'none' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
-                  <strong>Employee</strong>
-                  <span style={{ fontSize: '13px', color: 'var(--muted)' }}>(Submitter)</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
-                  <strong>Finance Manager</strong>
-                  <span style={{ fontSize: '13px', color: 'var(--muted)' }}>(Level 1 Approver)</span>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
-                  <strong>CFO</strong>
-                  <span style={{ fontSize: '13px', color: 'var(--muted)' }}>(Level 2 Approver)</span>
-                </li>
+                {actors.map(actor => (
+                  <li key={actor.id || actor.name} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
+                    <strong>{actor.name}</strong>
+                    {actor.role && <span style={{ fontSize: '13px', color: 'var(--muted)' }}>({actor.role})</span>}
+                  </li>
+                ))}
               </ul>
             </Card>
 
             <Card padding="24px">
               <h3 style={{ fontSize: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px', margin: 0 }}>Systems Touched</h3>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <Badge status="DEFAULT">Email Notifications</Badge>
-                <Badge status="DEFAULT">PO System</Badge>
-                <Badge status="DEFAULT">ERP System</Badge>
+                {systems.map(system => (
+                  <Badge key={system.id || system.name} status="DEFAULT">{system.name}</Badge>
+                ))}
               </div>
             </Card>
 
             <Card padding="24px">
               <h3 style={{ fontSize: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '16px', margin: 0, color: 'var(--danger)' }}>Bottlenecks & Decision Gates</h3>
               <ul style={{ display: 'flex', flexDirection: 'column', gap: '16px', margin: 0, padding: 0, listStyle: 'none' }}>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  <span className="status-dot warning" style={{ marginTop: '6px' }} />
-                  <div>
-                    <strong style={{ display: 'block' }}>Manual PO Matching</strong>
-                    <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Human intervention required when purchase order discrepancies arise.</span>
-                  </div>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  <span className="status-dot warning" style={{ marginTop: '6px' }} />
-                  <div>
-                    <strong style={{ display: 'block' }}>Dual-Tier Approval Routing</strong>
-                    <span style={{ fontSize: '13px', color: 'var(--muted)' }}>High-value thresholds require executive level authorization.</span>
-                  </div>
-                </li>
+                {bottlenecks.map(b => (
+                  <li key={b.id || b.title} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                    <span className="status-dot warning" style={{ marginTop: '6px' }} />
+                    <div>
+                      <strong style={{ display: 'block' }}>{b.title}</strong>
+                      <span style={{ fontSize: '13px', color: 'var(--muted)' }}>{b.description}</span>
+                    </div>
+                  </li>
+                ))}
               </ul>
             </Card>
 

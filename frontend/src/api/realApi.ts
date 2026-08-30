@@ -51,8 +51,8 @@ export class RealApiService implements ApiService {
     return apiClient.get<Project[]>('/projects');
   }
 
-  createProject(name: string): Promise<void> {
-    return apiClient.post('/projects', { name });
+  createProject(name: string, description?: string, filename?: string): Promise<{ id: string; name: string; created_at: string; workflowId?: string; workflow_id?: string; versionId?: string; documentId?: string }> {
+    return apiClient.post('/projects', { name, description, filename });
   }
 
   // =======================================================================

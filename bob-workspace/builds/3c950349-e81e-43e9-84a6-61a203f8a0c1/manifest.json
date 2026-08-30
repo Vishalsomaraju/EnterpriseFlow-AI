@@ -1,0 +1,19 @@
+{
+  "buildId": "3c950349-e81e-43e9-84a6-61a203f8a0c1",
+  "workflowId": "bc063264-9710-404e-8a02-ea411fcfa505",
+  "workflowVersionId": "2b7b77a2-3ef8-4abf-9366-3eae377595ac",
+  "blueprintId": "76261d90-7c33-4970-b7ff-2a12cae06257",
+  "bobSessionId": "bob-sess-3c950349-e81e-43e9-84a6-61a203f8a0c1",
+  "repository": "E:\\EnterpriseFlow\\demo-repository\\invoice-automation",
+  "repositoryCommitHash": "23ab8050c03b53c836da88fcbd0c293cefb8fda9",
+  "workspace": "E:\\EnterpriseFlow\\bob-workspace\\builds\\3c950349-e81e-43e9-84a6-61a203f8a0c1",
+  "evidenceEndpoints": {
+    "events": "http://localhost:3001/api/v1/builds/3c950349-e81e-43e9-84a6-61a203f8a0c1/bob/events",
+    "plan": "http://localhost:3001/api/v1/builds/3c950349-e81e-43e9-84a6-61a203f8a0c1/bob/plan",
+    "changes": "http://localhost:3001/api/v1/builds/3c950349-e81e-43e9-84a6-61a203f8a0c1/bob/changes",
+    "tests": "http://localhost:3001/api/v1/builds/3c950349-e81e-43e9-84a6-61a203f8a0c1/bob/tests",
+    "documentation": "http://localhost:3001/api/v1/builds/3c950349-e81e-43e9-84a6-61a203f8a0c1/bob/documentation"
+  },
+  "createdAt": "2026-08-30T16:08:13.452Z",
+  "schemaVersion": "3.0"
+}
