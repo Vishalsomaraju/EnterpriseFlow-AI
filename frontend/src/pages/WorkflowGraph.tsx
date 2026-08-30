@@ -16,6 +16,7 @@ import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { PageContainer } from '../components/layout/PageContainer';
+import { SkeletonMetrics, SkeletonCanvas, ErrorState, EmptyState } from '../components/States';
 import { Link, useParams } from 'react-router-dom';
 
 import { WorkflowNode } from '../components/nodes/WorkflowNode';
@@ -35,7 +36,7 @@ export function WorkflowGraphPage() {
   
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
-  const { data: graphData } = useWorkflowGraph(id);
+  const { data: graphData, isLoading, error, refetch } = useWorkflowGraph(id);
 
   useEffect(() => {
     if (graphData) {
@@ -56,8 +57,8 @@ export function WorkflowGraphPage() {
       setEdges(initialEdges);
       setRules(graphData.rules);
       
-      const defaultNode = initialNodes.find(n => n.id === 'n6') || initialNodes[0];
-      setSelectedNode(defaultNode);
+      const defaultNode = initialNodes.find(n => n.id === 'n6' || n.id.includes('amount') || n.id.includes('approval')) || initialNodes[0];
+      setSelectedNode(defaultNode || null);
     }
   }, [graphData, setNodes, setEdges]);
 
@@ -65,16 +66,54 @@ export function WorkflowGraphPage() {
     if (nodes.length > 0) setSelectedNode(nodes[0]);
   }, []);
 
+  if (isLoading) {
+    return (
+      <PageContainer variant="full">
+        <PageHeader 
+          eyebrow="Workflow Graph" 
+          title="State Machine Graph" 
+        />
+        <SkeletonMetrics count={4} />
+        <div style={{ marginTop: '24px' }}>
+          <SkeletonCanvas height="640px" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageContainer variant="full">
+        <PageHeader eyebrow="Workflow Graph" title="State Machine Graph" />
+        <div style={{ marginTop: '24px' }}>
+          <ErrorState 
+            error={error} 
+            message="Failed to retrieve workflow graph from the database." 
+            onRetry={() => refetch()}
+          />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  const totalSteps = graphData?.nodes?.length || 0;
+  const totalEdges = graphData?.edges?.length || 0;
+  const totalRules = graphData?.rules?.length || 0;
+  const humanCheckpoints = graphData?.nodes?.filter(n => n.type === 'human' || n.kind?.toLowerCase().includes('human')).length || 0;
+
   return (
     <PageContainer variant="full">
       <PageHeader 
         eyebrow="Workflow Graph" 
-        title="Invoice Approval state machine"
+        title="Deterministic State Machine"
         actions={
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <Badge status="COMPLETED">Schema validated</Badge>
+            <Badge status="COMPLETED">Schema Validated</Badge>
+            <Link to={`/app/workflows/${id}/analysis`}>
+              <Button variant="secondary">Analysis</Button>
+            </Link>
             <Link to={`/app/workflows/${id}/impact`}>
-              <Button>View impact</Button>
+              <Button>Analyze Impact</Button>
             </Link>
           </div>
         }
@@ -82,93 +121,107 @@ export function WorkflowGraphPage() {
 
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: '20px' }}>
         <Card>
-          <p className="eyebrow">Extraction summary</p>
-          <h3 style={{ fontSize: '28px', margin: '4px 0' }}>12</h3>
-          <small style={{ color: 'var(--muted)' }}>steps • 4 actors, 3 decisions</small>
+          <p className="eyebrow">Workflow steps</p>
+          <h3 style={{ fontSize: '28px', margin: '4px 0' }}>{totalSteps}</h3>
+          <small style={{ color: 'var(--muted)' }}>Persisted state machine nodes</small>
         </Card>
         <Card>
-          <p className="eyebrow">Ambiguities</p>
-          <h3 style={{ fontSize: '28px', margin: '4px 0', color: 'var(--warning)' }}>2</h3>
-          <small style={{ color: 'var(--muted)' }}>Threshold amount & missing PO</small>
+          <p className="eyebrow">Transitions</p>
+          <h3 style={{ fontSize: '28px', margin: '4px 0' }}>{totalEdges}</h3>
+          <small style={{ color: 'var(--muted)' }}>Directed execution edges</small>
         </Card>
         <Card>
-          <p className="eyebrow">Structured schema</p>
-          <h3 style={{ fontSize: '28px', margin: '4px 0' }}>v1.4</h3>
-          <small style={{ color: 'var(--muted)' }}>workflow.invoice-approval</small>
+          <p className="eyebrow">Business rules</p>
+          <h3 style={{ fontSize: '28px', margin: '4px 0', color: totalRules > 0 ? 'var(--accent)' : 'var(--muted)' }}>{totalRules}</h3>
+          <small style={{ color: 'var(--muted)' }}>Deterministic policy constraints</small>
         </Card>
         <Card>
-          <p className="eyebrow">Rule engine</p>
-          <h3 style={{ fontSize: '28px', margin: '4px 0' }}>0</h3>
-          <small style={{ color: 'var(--muted)' }}>Dynamic prompt-time routings</small>
+          <p className="eyebrow">Human checkpoints</p>
+          <h3 style={{ fontSize: '28px', margin: '4px 0', color: humanCheckpoints > 0 ? 'var(--warning)' : 'var(--text)' }}>{humanCheckpoints}</h3>
+          <small style={{ color: 'var(--muted)' }}>Manual governance gates</small>
         </Card>
       </section>
 
-      <section className="graph-layout" style={{ marginTop: '24px' }}>
-        <div className="graph-canvas-panel dark-mode">
-          <div className="canvas-toolbar">
-            <Badge status="DEFAULT">Canonical dependency view</Badge>
-          </div>
-          <div className="workflow-canvas" style={{ height: '680px', marginTop: '16px' }}>
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onSelectionChange={onSelectionChange}
-              fitView
-            >
-              <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#97a3b6" />
-              <Controls />
-            </ReactFlow>
-          </div>
+      {totalSteps === 0 ? (
+        <div style={{ marginTop: '24px' }}>
+          <EmptyState
+            title="No workflow nodes found"
+            description="This workflow version has no state machine nodes mapped yet."
+          />
         </div>
+      ) : (
+        <section className="graph-layout" style={{ marginTop: '24px' }}>
+          <div className="graph-canvas-panel dark-mode">
+            <div className="canvas-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Badge status="DEFAULT">Canonical dependency view</Badge>
+              <span style={{ fontSize: '12px', color: 'var(--dark-muted)' }}>Click a node to inspect rules</span>
+            </div>
+            <div className="workflow-canvas" style={{ height: '680px', marginTop: '16px' }}>
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onSelectionChange={onSelectionChange}
+                fitView
+              >
+                <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#97a3b6" />
+                <Controls />
+              </ReactFlow>
+            </div>
+          </div>
 
-        <aside className="inspector-panel dark-mode" style={{ background: 'var(--dark-surface)', color: 'var(--dark-text)' }}>
-          {selectedNode ? (
-            <>
-              <div className="inspector-head" style={{ marginBottom: '20px' }}>
-                <p className="eyebrow" style={{ color: 'var(--dark-muted)' }}>Node inspector</p>
-                <h2 id="inspector-title" style={{ margin: 0 }}>{(selectedNode.data as any).label}</h2>
-              </div>
-              <div className="inspector-block" style={{ marginBottom: '20px' }}>
-                <Badge status={(selectedNode.data as any).type === 'human' ? 'WARNING' : 'COMPLETED'}>
-                  {(selectedNode.data as any).kind}
-                </Badge>
-                <p className="inspector-text" style={{ marginTop: '12px', color: 'var(--dark-muted)' }}>
-                  This node represents a step in the deterministic state machine.
-                </p>
-              </div>
-              
-              {rules.filter(r => r.nodeId === selectedNode.id).length > 0 && (
-                <>
-                  <div className="inspector-block" style={{ marginBottom: '20px' }}>
-                    <p className="eyebrow" style={{ color: 'var(--dark-muted)' }}>Rules enforced</p>
-                    <ul className="rule-list" style={{ color: 'var(--dark-muted)', paddingLeft: '18px', fontSize: '13px', lineHeight: '1.5' }}>
-                      {rules.filter(r => r.nodeId === selectedNode.id).map(rule => (
-                        <li key={rule.id}>{rule.description}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="inspector-block">
-                    <p className="eyebrow" style={{ color: 'var(--dark-muted)' }}>Deterministic rule payload</p>
-                    <pre className="schema-block" style={{ background: '#111827', padding: '12px', borderRadius: '8px', fontSize: '12px', overflowX: 'auto', border: '1px solid var(--dark-border)' }}>
+          <aside className="inspector-panel dark-mode" style={{ background: 'var(--dark-surface)', color: 'var(--dark-text)' }}>
+            {selectedNode ? (
+              <>
+                <div className="inspector-head" style={{ marginBottom: '20px' }}>
+                  <p className="eyebrow" style={{ color: 'var(--dark-muted)' }}>Node inspector</p>
+                  <h2 id="inspector-title" style={{ margin: 0 }}>{(selectedNode.data as any).label}</h2>
+                </div>
+                <div className="inspector-block" style={{ marginBottom: '20px' }}>
+                  <Badge status={(selectedNode.data as any).type === 'human' ? 'WARNING' : 'COMPLETED'}>
+                    {(selectedNode.data as any).kind || (selectedNode.data as any).type}
+                  </Badge>
+                  <p className="inspector-text" style={{ marginTop: '12px', color: 'var(--dark-muted)' }}>
+                    Node ID: <code>{selectedNode.id}</code>
+                  </p>
+                </div>
+                
+                {rules.filter(r => r.nodeId === selectedNode.id).length > 0 ? (
+                  <>
+                    <div className="inspector-block" style={{ marginBottom: '20px' }}>
+                      <p className="eyebrow" style={{ color: 'var(--dark-muted)' }}>Rules enforced</p>
+                      <ul className="rule-list" style={{ color: 'var(--dark-muted)', paddingLeft: '18px', fontSize: '13px', lineHeight: '1.5' }}>
+                        {rules.filter(r => r.nodeId === selectedNode.id).map(rule => (
+                          <li key={rule.id}>{rule.description || rule.condition}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="inspector-block">
+                      <p className="eyebrow" style={{ color: 'var(--dark-muted)' }}>Deterministic rule payload</p>
+                      <pre className="schema-block" style={{ background: '#111827', padding: '12px', borderRadius: '8px', fontSize: '12px', overflowX: 'auto', border: '1px solid var(--dark-border)' }}>
 {JSON.stringify({
   ruleId: rules.find(r => r.nodeId === selectedNode.id)?.id,
   condition: rules.find(r => r.nodeId === selectedNode.id)?.condition,
   action: rules.find(r => r.nodeId === selectedNode.id)?.action
 }, null, 2)}
-                    </pre>
+                      </pre>
+                    </div>
+                  </>
+                ) : (
+                  <div className="inspector-block" style={{ marginTop: '16px', color: 'var(--dark-muted)', fontSize: '13px' }}>
+                    No business rule constraints assigned directly to this node.
                   </div>
-                </>
-              )}
-            </>
-          ) : (
-            <div style={{ color: 'var(--dark-muted)' }}>Select a node to inspect</div>
-          )}
-        </aside>
-      </section>
+                )}
+              </>
+            ) : (
+              <div style={{ color: 'var(--dark-muted)' }}>Select a node in the graph to inspect details</div>
+            )}
+          </aside>
+        </section>
+      )}
     </PageContainer>
   );
 }

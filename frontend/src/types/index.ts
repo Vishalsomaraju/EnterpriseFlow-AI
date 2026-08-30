@@ -8,6 +8,7 @@ export interface Project {
   id: string;
   name: string;
   created_at: string;
+  workflow_id?: string;
 }
 
 export interface WorkflowExtractionJob {

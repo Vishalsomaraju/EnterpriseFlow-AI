@@ -11,14 +11,8 @@ export class BlueprintService {
    * If a blueprint already exists for this version, it returns the existing one (idempotent).
    */
   public static async generateAndPersistBlueprint(workflowId: string): Promise<{ blueprint: AutomationBlueprint, status: string, errors: string[] }> {
-    // 1. Get the current active version
-    const versionRow = await db
-      .selectFrom('workflow_versions')
-      .where('workflow_id', '=', workflowId)
-      .orderBy('version', 'desc')
-      .limit(1)
-      .selectAll()
-      .executeTakeFirst();
+    // 1. Get the current active version (resolving by workflow or project ID)
+    const versionRow = await WorkflowGraphService.resolveWorkflowVersion(workflowId);
 
     if (!versionRow) {
       throw new AppError('Workflow version not found', 'NOT_FOUND', 404);
@@ -50,7 +44,7 @@ export class BlueprintService {
     // Fetch Workflow Info
     const workflow = await db
       .selectFrom('workflows')
-      .where('id', '=', workflowId)
+      .where('id', '=', versionRow.workflow_id)
       .selectAll()
       .executeTakeFirstOrThrow();
 
@@ -177,13 +171,7 @@ export class BlueprintService {
   }
 
   public static async getBlueprint(workflowId: string): Promise<{ blueprint: AutomationBlueprint, status: string, errors: string[] } | null> {
-    const versionRow = await db
-      .selectFrom('workflow_versions')
-      .where('workflow_id', '=', workflowId)
-      .orderBy('version', 'desc')
-      .limit(1)
-      .selectAll()
-      .executeTakeFirst();
+    const versionRow = await WorkflowGraphService.resolveWorkflowVersion(workflowId);
 
     if (!versionRow) {
       return null;

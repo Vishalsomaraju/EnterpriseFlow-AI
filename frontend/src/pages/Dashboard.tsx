@@ -8,7 +8,7 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { Section } from '../components/layout/Section';
 import { ActivityTimeline } from '../components/ActivityTimeline';
 import { useProjects, useDashboardStats, useActivity } from '../hooks/queries';
-import { LoadingState, ErrorState, EmptyState } from '../components/States';
+import { SkeletonMetrics, SkeletonTable, SkeletonCard, SkeletonList, ErrorState, EmptyState } from '../components/States';
 
 export function Dashboard() {
   const { data: projects, isLoading: projectsLoading, error: projectsError } = useProjects();
@@ -20,7 +20,14 @@ export function Dashboard() {
     return (
       <PageContainer variant="wide">
         <PageHeader eyebrow="Workspace" title="Good Morning, EnterpriseFlow Admin" />
-        <LoadingState message="Loading dashboard..." />
+        <SkeletonMetrics count={4} />
+        <div style={{ marginTop: '32px' }}>
+          <SkeletonTable rows={3} cols={4} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '32px' }}>
+          <SkeletonCard height="140px" />
+          <SkeletonList items={3} />
+        </div>
       </PageContainer>
     );
   }
@@ -29,7 +36,10 @@ export function Dashboard() {
     return (
       <PageContainer variant="wide">
         <PageHeader eyebrow="Workspace" title="Good Morning, EnterpriseFlow Admin" />
-        <ErrorState error={statsError || projectsError || activityError || 'Failed to load dashboard'} />
+        <ErrorState
+          error={statsError || projectsError || activityError || 'Failed to load dashboard'}
+          message="Could not retrieve workspace statistics from the server."
+        />
       </PageContainer>
     );
   }
@@ -98,7 +108,7 @@ export function Dashboard() {
                   <td><Badge status="ACTIVE" /></td>
                   <td style={{ color: 'var(--muted)' }}>{new Date(project.created_at).toLocaleDateString()}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <Link to={`/app/workflows/${project.id}/graph`}>
+                    <Link to={`/app/workflows/${project.workflow_id || project.id}/graph`}>
                       <Button variant="secondary" size="sm">View Graph</Button>
                     </Link>
                   </td>

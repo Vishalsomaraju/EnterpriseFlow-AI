@@ -20,7 +20,7 @@ import { ImpactNode } from '../components/nodes/ImpactNode';
 import type { ImpactNodeType } from '../components/nodes/ImpactNode';
 import { WorkflowEdge } from '../components/edges/WorkflowEdge';
 import { useWorkflowGraph, useImpactAnalysis } from '../hooks/queries';
-import { LoadingState, ErrorState, EmptyState } from '../components/States';
+import { SkeletonMetrics, SkeletonCard, SkeletonCanvas, ErrorState, EmptyState } from '../components/States';
 import type { ImpactAnalysisResponse } from '../api/types';
 import type { BadgeStatus } from '../components/Badge';
 
@@ -201,7 +201,9 @@ export function ImpactAnalysisPage() {
     return (
       <PageContainer variant="full">
         <PageHeader eyebrow="Impact Analysis" title="Rule Impact Analyzer" />
-        <LoadingState message="Loading rule data..." />
+        <div style={{ marginTop: '24px' }}>
+          <SkeletonCard height="160px" />
+        </div>
       </PageContainer>
     );
   }
@@ -210,7 +212,13 @@ export function ImpactAnalysisPage() {
     return (
       <PageContainer variant="full">
         <PageHeader eyebrow="Impact Analysis" title="Rule Impact Analyzer" />
-        <ErrorState error={graphError} message="Failed to load workflow rule data." />
+        <div style={{ marginTop: '24px' }}>
+          <ErrorState 
+            error={graphError} 
+            message="Failed to load workflow rule data from database." 
+            workflowId={WORKFLOW_ID}
+          />
+        </div>
       </PageContainer>
     );
   }
@@ -312,10 +320,15 @@ export function ImpactAnalysisPage() {
       {/* ── Impact result area ────────────────────────────────────────── */}
       {submittedExpression && (
         <section style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {impactLoading && <LoadingState message="Calculating change impact..." />}
+          {impactLoading && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <SkeletonMetrics count={3} />
+              <SkeletonCanvas height="480px" />
+            </div>
+          )}
 
           {!impactLoading && impactError && (
-            <ErrorState error={impactError} message="Impact analysis request failed." />
+            <ErrorState error={impactError} message="Impact analysis request failed." workflowId={WORKFLOW_ID} />
           )}
 
           {!impactLoading && !impactError && impact && (

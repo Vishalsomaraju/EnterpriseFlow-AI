@@ -4,7 +4,15 @@ import { db } from '../../db/index';
 export const projectRoutes: FastifyPluginAsync = async (app) => {
   app.get('/', async (request, reply) => {
     try {
-      const projects = await db.selectFrom('projects').selectAll().execute();
+      const projects = await db.selectFrom('projects')
+        .leftJoin('workflows', 'workflows.project_id', 'projects.id')
+        .select([
+          'projects.id as id',
+          'projects.name as name',
+          'projects.created_at as created_at',
+          'workflows.id as workflow_id'
+        ])
+        .execute();
       return reply.send(projects);
     } catch (err) {
       request.log.error(err);

@@ -3,23 +3,42 @@ import { db } from '../../db/index';
 import { JobWorker } from '../../jobs/JobWorker';
 import { JobService } from '../../jobs/JobService';
 import { JobType } from '../../jobs/types';
+import { WorkflowGraphService } from '../../services/graph/WorkflowGraphService';
 
 export const buildRoutes: FastifyPluginAsync = async (app) => {
-  app.post<{ Params: { id: string } }>('/:id/test', async (request, reply) => {
-    const buildId = request.params.id;
+  async function resolveBuild(idOrWorkflowId: string) {
+    let build = await db.selectFrom('builds').where('id', '=', idOrWorkflowId).selectAll().executeTakeFirst();
+    if (!build) {
+      const version = await WorkflowGraphService.resolveWorkflowVersion(idOrWorkflowId);
+      if (version) {
+        const blueprint = await db.selectFrom('blueprints')
+          .where('workflow_version_id', '=', version.id)
+          .selectAll()
+          .executeTakeFirst();
 
+        if (blueprint) {
+          build = await db.selectFrom('builds')
+            .where('blueprint_id', '=', blueprint.id)
+            .orderBy('created_at', 'desc')
+            .selectAll()
+            .executeTakeFirst();
+        }
+      }
+    }
+    return build;
+  }
+
+  app.post<{ Params: { id: string } }>('/:id/test', async (request, reply) => {
     try {
-      const build = await db
-        .selectFrom('builds')
-        .where('id', '=', buildId)
-        .selectAll()
-        .executeTakeFirst();
+      const build = await resolveBuild(request.params.id);
 
       if (!build) {
         return reply.status(404).send({
           error: { code: 'BUILD_NOT_FOUND', message: 'Build not found', requestId: request.id }
         });
       }
+
+      const buildId = build.id;
 
       // Idempotency check
       const existingJob = await db.selectFrom('jobs')
@@ -48,8 +67,8 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
 
   app.get<{ Params: { id: string } }>('/:id', async (request, reply) => {
     try {
-      const build = await db.selectFrom('builds').where('id', '=', request.params.id).selectAll().executeTakeFirst();
-      if (!build) return reply.status(404).send({ error: 'Not found' });
+      const build = await resolveBuild(request.params.id);
+      if (!build) return reply.status(404).send({ error: 'Build not found' });
       const blueprint = await db.selectFrom('blueprints').where('id', '=', build.blueprint_id).selectAll().executeTakeFirst();
       const version = blueprint
         ? await db.selectFrom('workflow_versions').where('id', '=', blueprint.workflow_version_id).selectAll().executeTakeFirst()
@@ -71,8 +90,11 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
 
   app.get<{ Params: { id: string } }>('/:id/events', async (request, reply) => {
     try {
+      const build = await resolveBuild(request.params.id);
+      if (!build) return reply.send([]);
+
       const events = await db.selectFrom('bob_activity_events')
-        .where('build_id', '=', request.params.id)
+        .where('build_id', '=', build.id)
         .orderBy('created_at', 'asc')
         .selectAll()
         .execute();
@@ -84,8 +106,11 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
 
   app.get<{ Params: { id: string } }>('/:id/plan', async (request, reply) => {
     try {
+      const build = await resolveBuild(request.params.id);
+      if (!build) return reply.send([]);
+
       const subagents = await db.selectFrom('build_subagents')
-        .where('build_id', '=', request.params.id)
+        .where('build_id', '=', build.id)
         .selectAll()
         .execute();
       return reply.send(subagents);
@@ -96,8 +121,11 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
 
   app.get<{ Params: { id: string } }>('/:id/changes', async (request, reply) => {
     try {
+      const build = await resolveBuild(request.params.id);
+      if (!build) return reply.send({ diff: '', files_changed: 0, files: [] });
+
       const changes = await db.selectFrom('build_changes')
-        .where('build_id', '=', request.params.id)
+        .where('build_id', '=', build.id)
         .selectAll()
         .execute();
 
@@ -118,8 +146,11 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
 
   app.get<{ Params: { id: string } }>('/:id/tests', async (request, reply) => {
     try {
+      const build = await resolveBuild(request.params.id);
+      if (!build) return reply.send({ testRuns: [] });
+
       const testRuns = await db.selectFrom('test_runs')
-        .where('build_id', '=', request.params.id)
+        .where('build_id', '=', build.id)
         .orderBy('completed_at', 'desc')
         .selectAll()
         .execute();
@@ -147,8 +178,11 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
 
   app.get<{ Params: { id: string } }>('/:id/documentation', async (request, reply) => {
     try {
+      const build = await resolveBuild(request.params.id);
+      if (!build) return reply.send([]);
+
       const docs = await db.selectFrom('documentation_artifacts')
-        .where('build_id', '=', request.params.id)
+        .where('build_id', '=', build.id)
         .selectAll()
         .execute();
       return reply.send(docs);
@@ -159,12 +193,15 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
 
   app.post<{ Params: { id: string } }>('/:id/security-scan', async (request, reply) => {
     try {
+      const build = await resolveBuild(request.params.id);
+      if (!build) return reply.status(404).send({ error: 'Build not found' });
+
       const { JobService } = await import('../../jobs/JobService');
       const { JobWorker } = await import('../../jobs/JobWorker');
       const { JobType } = await import('../../jobs/types');
 
-      const jobId = await JobService.createJob(JobType.SECURITY_SCAN, 'BUILD', request.params.id);
-      JobWorker.dispatch(jobId, JobType.SECURITY_SCAN, request.params.id);
+      const jobId = await JobService.createJob(JobType.SECURITY_SCAN, 'BUILD', build.id);
+      JobWorker.dispatch(jobId, JobType.SECURITY_SCAN, build.id);
       
       return reply.send({ jobId, status: 'QUEUED' });
     } catch (err) {
@@ -174,8 +211,11 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
 
   app.get<{ Params: { id: string } }>('/:id/security', async (request, reply) => {
     try {
+      const build = await resolveBuild(request.params.id);
+      if (!build) return reply.status(404).send({ error: 'Build not found' });
+
       const scan = await db.selectFrom('security_scans')
-        .where('build_id', '=', request.params.id)
+        .where('build_id', '=', build.id)
         .selectAll()
         .executeTakeFirst();
       
@@ -198,17 +238,14 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
 
   app.get<{ Params: { id: string } }>('/:id/review', async (request, reply) => {
     try {
-      const build = await db.selectFrom('builds')
-        .where('id', '=', request.params.id)
-        .selectAll()
-        .executeTakeFirst();
+      const build = await resolveBuild(request.params.id);
       if (!build) return reply.status(404).send({ error: 'Build not found' });
 
       const [review, changes, testRun, security, blueprint] = await Promise.all([
-        db.selectFrom('reviews').where('build_id', '=', request.params.id).orderBy('created_at', 'desc').selectAll().executeTakeFirst(),
-        db.selectFrom('build_changes').where('build_id', '=', request.params.id).selectAll().execute(),
-        db.selectFrom('test_runs').where('build_id', '=', request.params.id).orderBy('completed_at', 'desc').selectAll().executeTakeFirst(),
-        db.selectFrom('security_scans').where('build_id', '=', request.params.id).orderBy('id', 'desc').selectAll().executeTakeFirst(),
+        db.selectFrom('reviews').where('build_id', '=', build.id).orderBy('created_at', 'desc').selectAll().executeTakeFirst(),
+        db.selectFrom('build_changes').where('build_id', '=', build.id).selectAll().execute(),
+        db.selectFrom('test_runs').where('build_id', '=', build.id).orderBy('completed_at', 'desc').selectAll().executeTakeFirst(),
+        db.selectFrom('security_scans').where('build_id', '=', build.id).orderBy('id', 'desc').selectAll().executeTakeFirst(),
         db.selectFrom('blueprints').where('id', '=', build.blueprint_id).selectAll().executeTakeFirst(),
       ]);
 

@@ -1,12 +1,12 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { PageHeader } from '../components/PageHeader';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { PageContainer } from '../components/layout/PageContainer';
 import { useApproveReview, useRejectReview } from '../hooks/mutations';
 import { useReviewSummary, useSecurityResult } from '../hooks/queries';
-import { Check, ArrowRight, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { LoadingState, ErrorState } from '../components/States';
+import { Check, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { SkeletonCard, SkeletonList, ErrorState, EmptyState } from '../components/States';
 
 export function ChangeReviewPage() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export function ChangeReviewPage() {
   const approveMutation = useApproveReview();
   const rejectMutation = useRejectReview();
   
-  const { data: summary, isLoading, error } = useReviewSummary(buildOrWorkflowId);
+  const { data: summary, isLoading, error, refetch } = useReviewSummary(buildOrWorkflowId);
   const { data: security } = useSecurityResult(buildOrWorkflowId);
 
   const isBlocked = security?.status === 'BLOCK';
@@ -29,7 +29,7 @@ export function ChangeReviewPage() {
   };
 
   const handleReject = () => {
-    rejectMutation.mutate({ reviewId: buildOrWorkflowId, reason: 'Declined' }, {
+    rejectMutation.mutate({ reviewId: buildOrWorkflowId, reason: 'Declined by reviewer' }, {
       onSuccess: () => navigate(`/app/workflows/${buildOrWorkflowId}/build/changes`)
     });
   };
@@ -40,19 +40,54 @@ export function ChangeReviewPage() {
     return (
       <PageContainer>
         <PageHeader eyebrow="Governance Gate" title="Human Review" />
-        <LoadingState message="Loading review summary..." />
+        <div style={{ maxWidth: '800px', margin: '32px auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <SkeletonCard height="120px" />
+          <SkeletonList items={4} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <SkeletonCard height="100px" />
+            <SkeletonCard height="100px" />
+          </div>
+        </div>
       </PageContainer>
     );
   }
 
-  if (error || !summary) {
+  if (error) {
     return (
       <PageContainer>
         <PageHeader eyebrow="Governance Gate" title="Human Review" />
-        <ErrorState error={error} message="Failed to load review summary." />
+        <div style={{ maxWidth: '800px', margin: '32px auto' }}>
+          <ErrorState 
+            error={error} 
+            message="Failed to load review summary from server." 
+            onRetry={() => refetch()}
+            workflowId={buildOrWorkflowId}
+          />
+        </div>
       </PageContainer>
     );
   }
+
+  if (!summary) {
+    return (
+      <PageContainer>
+        <PageHeader eyebrow="Governance Gate" title="Human Review" />
+        <div style={{ maxWidth: '800px', margin: '32px auto' }}>
+          <EmptyState
+            title="No review pending"
+            description="There are currently no change reviews awaiting authorization for this workflow."
+            action={
+              <Link to={`/app/workflows/${buildOrWorkflowId}/graph`}>
+                <Button>Back to Workflow</Button>
+              </Link>
+            }
+          />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  const totalTests = (summary.testsPassed || 0) + (summary.testsFailed || 0);
 
   return (
     <PageContainer>
@@ -85,31 +120,25 @@ export function ChangeReviewPage() {
           </div>
         )}
 
-        <Card style={{ marginBottom: '32px' }}>
-          <p className="eyebrow">Business rule changed</p>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
-            <span>₹5L</span>
-            <ArrowRight size={24} color="var(--muted)" />
-            <span>₹10L</span>
-          </div>
+        <Card style={{ marginBottom: '24px' }}>
+          <p className="eyebrow">Change Summary</p>
+          <p style={{ fontSize: '15px', lineHeight: 1.6, color: 'var(--text)', margin: '8px 0 0 0' }}>
+            {summary.businessImpact || `${summary.filesChanged || 0} files modified across workflow and test boundaries.`}
+          </p>
         </Card>
         
-        <div style={{ display: 'grid', gap: '16px', marginBottom: '32px' }}>
-          <Card style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <strong style={{ fontSize: '15px' }}>Workflow Updated</strong>
-            <Check size={20} color="var(--success)" />
+        <div style={{ display: 'grid', gap: '12px', marginBottom: '24px' }}>
+          <Card style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '14px', fontWeight: 500 }}>State Machine Graph Updated</span>
+            <Check size={18} color="var(--success)" />
           </Card>
-          <Card style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <strong style={{ fontSize: '15px' }}>Code Updated</strong>
-            <Check size={20} color="var(--success)" />
+          <Card style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '14px', fontWeight: 500 }}>Code Implementation Generated ({summary.filesChanged || 0} files)</span>
+            <Check size={18} color="var(--success)" />
           </Card>
-          <Card style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <strong style={{ fontSize: '15px' }}>Tests Updated</strong>
-            <Check size={20} color="var(--success)" />
-          </Card>
-          <Card style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <strong style={{ fontSize: '15px' }}>Documentation Updated</strong>
-            <Check size={20} color="var(--success)" />
+          <Card style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '14px', fontWeight: 500 }}>Test Suite Verified ({summary.testsPassed || 0} passed)</span>
+            <Check size={18} color="var(--success)" />
           </Card>
         </div>
 
@@ -117,7 +146,9 @@ export function ChangeReviewPage() {
           <Card style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <p className="eyebrow">Regression tests</p>
-              <h3 style={{ fontSize: '24px', margin: '4px 0 0 0' }}>{summary.testsPassed} / {summary.testsPassed + summary.testsFailed}</h3>
+              <h3 style={{ fontSize: '24px', margin: '4px 0 0 0' }}>
+                {totalTests > 0 ? `${summary.testsPassed} / ${totalTests}` : `${summary.testsPassed} Passed`}
+              </h3>
             </div>
             <Check size={28} color="var(--success)" />
           </Card>

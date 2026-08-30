@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { JobWorker } from '../../jobs/JobWorker';
 import { JobType } from '../../jobs/types';
 import { WorkflowExecutionInputSchema } from '../../domain/workflow-engine/ExecutionInputSchema';
+import { WorkflowGraphService } from '../../services/graph/WorkflowGraphService';
 
 const ExecutePayloadSchema = z.object({
   versionId: z.string(),
@@ -69,8 +70,16 @@ export default async function executionRoutes(app: FastifyInstance) {
   app.get('/workflows/:workflowId/execution', async (request, reply) => {
     const { workflowId } = request.params as { workflowId: string };
 
-    const versions = await db.selectFrom('workflow_versions').select('id').where('workflow_id', '=', workflowId).execute();
-    const versionIds = versions.map(v => v.id);
+    const resolvedVersion = await WorkflowGraphService.resolveWorkflowVersion(workflowId);
+    let versionIds: string[] = [];
+
+    if (resolvedVersion) {
+      const versions = await db.selectFrom('workflow_versions')
+        .select('id')
+        .where('workflow_id', '=', resolvedVersion.workflow_id)
+        .execute();
+      versionIds = versions.map(v => v.id);
+    }
 
     let execution = null;
     if (versionIds.length > 0) {

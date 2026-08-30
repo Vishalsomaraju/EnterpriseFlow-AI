@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/PageHeader';
 import { Card } from '../components/Card';
 import { PageContainer } from '../components/layout/PageContainer';
@@ -14,29 +15,37 @@ export function HelpPage() {
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          <Card style={{ padding: '24px', cursor: 'pointer' }}>
-            <div style={{ color: 'var(--accent)', marginBottom: '16px' }}><Book size={24} /></div>
-            <h3 style={{ fontSize: '16px', marginBottom: '8px', margin: 0 }}>Getting Started</h3>
-            <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '8px', margin: 0 }}>Learn the basics of EnterpriseFlow, from creating your first blueprint to triggering IBM Bob.</p>
-          </Card>
+          <Link to="/app/workflows" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Card style={{ padding: '24px', cursor: 'pointer', height: '100%' }}>
+              <div style={{ color: 'var(--accent)', marginBottom: '16px' }}><Book size={24} /></div>
+              <h3 style={{ fontSize: '16px', marginBottom: '8px', margin: 0 }}>Getting Started</h3>
+              <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '8px', margin: 0 }}>Learn the basics of EnterpriseFlow, from creating your first blueprint to triggering IBM Bob.</p>
+            </Card>
+          </Link>
           
-          <Card style={{ padding: '24px', cursor: 'pointer' }}>
-            <div style={{ color: 'var(--accent)', marginBottom: '16px' }}><Terminal size={24} /></div>
-            <h3 style={{ fontSize: '16px', marginBottom: '8px', margin: 0 }}>IBM Bob Engineering</h3>
-            <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '8px', margin: 0 }}>Understand how the multi-agent orchestration translates graph rules into source code.</p>
-          </Card>
+          <Link to="/app/workflows/0bc69865-15e0-4f30-af96-6227abee5e6c/build" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Card style={{ padding: '24px', cursor: 'pointer', height: '100%' }}>
+              <div style={{ color: 'var(--accent)', marginBottom: '16px' }}><Terminal size={24} /></div>
+              <h3 style={{ fontSize: '16px', marginBottom: '8px', margin: 0 }}>IBM Bob Engineering</h3>
+              <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '8px', margin: 0 }}>Understand how the multi-agent orchestration translates graph rules into source code.</p>
+            </Card>
+          </Link>
 
-          <Card style={{ padding: '24px', cursor: 'pointer' }}>
-            <div style={{ color: 'var(--accent)', marginBottom: '16px' }}><FileText size={24} /></div>
-            <h3 style={{ fontSize: '16px', marginBottom: '8px', margin: 0 }}>API Reference</h3>
-            <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '8px', margin: 0 }}>Documentation for triggering workflows programmatically and checking execution status.</p>
-          </Card>
+          <Link to="/app/workflows/0bc69865-15e0-4f30-af96-6227abee5e6c/documentation" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Card style={{ padding: '24px', cursor: 'pointer', height: '100%' }}>
+              <div style={{ color: 'var(--accent)', marginBottom: '16px' }}><FileText size={24} /></div>
+              <h3 style={{ fontSize: '16px', marginBottom: '8px', margin: 0 }}>API Reference</h3>
+              <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '8px', margin: 0 }}>Documentation for triggering workflows programmatically and checking execution status.</p>
+            </Card>
+          </Link>
 
-          <Card style={{ padding: '24px', cursor: 'pointer' }}>
-            <div style={{ color: 'var(--accent)', marginBottom: '16px' }}><HelpCircle size={24} /></div>
-            <h3 style={{ fontSize: '16px', marginBottom: '8px', margin: 0 }}>Troubleshooting</h3>
-            <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '8px', margin: 0 }}>Common errors during blueprint extraction, security validation, and test regression.</p>
-          </Card>
+          <Link to="/app/audit" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Card style={{ padding: '24px', cursor: 'pointer', height: '100%' }}>
+              <div style={{ color: 'var(--accent)', marginBottom: '16px' }}><HelpCircle size={24} /></div>
+              <h3 style={{ fontSize: '16px', marginBottom: '8px', margin: 0 }}>Compliance & Audit</h3>
+              <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '8px', margin: 0 }}>Common verification patterns during blueprint extraction, security validation, and test regression.</p>
+            </Card>
+          </Link>
         </div>
       </div>
     </PageContainer>

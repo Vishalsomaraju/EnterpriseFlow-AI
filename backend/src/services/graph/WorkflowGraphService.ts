@@ -4,15 +4,53 @@ import { GraphValidator } from '../../domain/workflow-engine/GraphValidator';
 import { WorkflowGraphDTO } from '../../domain/workflow-engine/types';
 
 export class WorkflowGraphService {
-  static async getGraph(workflowId: string): Promise<WorkflowGraphDTO> {
-    // 1. Get the active or latest version for this workflow
-    const version = await db
+  static async resolveWorkflowVersion(idOrProjectId: string) {
+    // 1. Try finding version directly by workflow_id
+    let version = await db
       .selectFrom('workflow_versions')
-      .select('id')
-      .where('workflow_id', '=', workflowId)
+      .where('workflow_id', '=', idOrProjectId)
       .orderBy('version', 'desc')
-      .limit(1)
+      .selectAll()
       .executeTakeFirst();
+
+    if (!version) {
+      // 2. Try finding workflow where project_id = idOrProjectId or id = idOrProjectId
+      const workflow = await db
+        .selectFrom('workflows')
+        .where((eb) => eb.or([
+          eb('project_id', '=', idOrProjectId),
+          eb('id', '=', idOrProjectId)
+        ]))
+        .orderBy('created_at', 'desc')
+        .selectAll()
+        .executeTakeFirst();
+
+      if (workflow) {
+        version = await db
+          .selectFrom('workflow_versions')
+          .where('workflow_id', '=', workflow.id)
+          .orderBy('version', 'desc')
+          .selectAll()
+          .executeTakeFirst();
+      }
+    }
+
+    if (!version) {
+      // 3. Try finding version directly by version id
+      version = await db
+        .selectFrom('workflow_versions')
+        .where('id', '=', idOrProjectId)
+        .orderBy('version', 'desc')
+        .selectAll()
+        .executeTakeFirst();
+    }
+
+    return version;
+  }
+
+  static async getGraph(workflowId: string): Promise<WorkflowGraphDTO> {
+    // 1. Get the active or latest version for this workflow or project ID
+    const version = await this.resolveWorkflowVersion(workflowId);
 
     if (!version) {
       throw new Error(`Workflow version not found for workflow: ${workflowId}`);

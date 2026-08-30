@@ -8,24 +8,27 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { ArrowRight, AlertTriangle } from 'lucide-react';
 import { useWorkflowGraph } from '../hooks/queries';
 import { useRuleChangeMutation } from '../hooks/mutations';
-import { LoadingState, ErrorState } from '../components/States';
+import { SkeletonMetrics, SkeletonCard, ErrorState } from '../components/States';
 
 export function BlueprintPage() {
   const { id = '0bc69865-15e0-4f30-af96-6227abee5e6c' } = useParams();
   const [activeTab, setActiveTab] = useState('Overview');
   const [editingRule, setEditingRule] = useState(false);
-  const [ruleAmount, setRuleAmount] = useState('5,00,000');
+  const [ruleAmount, setRuleAmount] = useState('10,00,000');
   const [ruleAction, setRuleAction] = useState('CFO Approval');
   const [ruleChanged, setRuleChanged] = useState(false);
 
-  const { data: graph, isLoading, error } = useWorkflowGraph(id);
+  const { data: graph, isLoading, error, refetch } = useWorkflowGraph(id);
   const { mutate: changeRule, isPending: isChangingRule } = useRuleChangeMutation(id);
 
   if (isLoading) {
     return (
       <PageContainer variant="wide">
-        <PageHeader eyebrow="Automation Blueprint" title="Invoice Approval" />
-        <LoadingState message="Loading blueprint rules..." />
+        <PageHeader eyebrow="Automation Blueprint" title="Blueprint Specification" />
+        <SkeletonMetrics count={4} />
+        <div style={{ marginTop: '24px' }}>
+          <SkeletonCard height="240px" />
+        </div>
       </PageContainer>
     );
   }
@@ -33,15 +36,27 @@ export function BlueprintPage() {
   if (error) {
     return (
       <PageContainer variant="wide">
-        <PageHeader eyebrow="Automation Blueprint" title="Invoice Approval" />
-        <ErrorState error={error} message="Failed to load blueprint rules." />
+        <PageHeader eyebrow="Automation Blueprint" title="Blueprint Specification" />
+        <div style={{ marginTop: '24px' }}>
+          <ErrorState 
+            error={error} 
+            message="Failed to load blueprint specification from database." 
+            onRetry={() => refetch()}
+            workflowId={id}
+          />
+        </div>
       </PageContainer>
     );
   }
 
+  const nodes = graph?.nodes || [];
+  const rules = graph?.rules || [];
+  const automatedSteps = nodes.filter(n => n.type === 'automated' || n.kind?.toLowerCase().includes('task') || n.kind?.toLowerCase().includes('trigger')).length;
+  const humanSteps = nodes.filter(n => n.type === 'human' || n.kind?.toLowerCase().includes('human')).length;
+
   const handleSaveRule = () => {
     const amount = Number(ruleAmount.replace(/,/g, ''));
-    const rule = graph?.rules.find((candidate) => candidate.action?.includes('CFO')) || graph?.rules[0];
+    const rule = rules.find((candidate) => candidate.action?.includes('CFO')) || rules[0];
     if (!rule || !Number.isFinite(amount) || amount <= 0) return;
 
     changeRule({ ruleId: rule.id, updates: { baseVersion: 1, expression: `amount >= ${amount}` } }, {
@@ -52,17 +67,16 @@ export function BlueprintPage() {
     });
   };
 
-  const tabs = ['Overview', 'Workflow', 'Rules', 'Integrations', 'Approvals', 'Acceptance Criteria'];
+  const tabs = ['Overview', 'Workflow', 'Rules', 'Integrations', 'Acceptance Criteria'];
 
   return (
     <PageContainer variant="wide">
       <PageHeader 
         eyebrow="Automation Blueprint" 
-        title="Invoice Approval"
+        title="Blueprint Specification"
         actions={
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <Badge status="COMPLETED">Ready for Engineering</Badge>
-            <Button variant="secondary">Edit Blueprint</Button>
             <Link to={`/app/workflows/${id}/build`}>
               <Button>Send to Bob <ArrowRight size={16} style={{ marginLeft: '8px' }} /></Button>
             </Link>
@@ -72,7 +86,7 @@ export function BlueprintPage() {
 
       {/* Tabs */}
       <div style={{ borderBottom: '1px solid var(--border)', marginTop: '24px' }}>
-        <div style={{ display: 'flex', gap: '32px' }}>
+        <div style={{ display: 'flex', gap: '32px', overflowX: 'auto' }}>
           {tabs.map(tab => (
             <button 
               key={tab}
@@ -85,7 +99,8 @@ export function BlueprintPage() {
                 fontSize: '14px',
                 fontWeight: 600,
                 color: activeTab === tab ? 'var(--text)' : 'var(--muted)',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
               }}
             >
               {tab}
@@ -99,12 +114,12 @@ export function BlueprintPage() {
           <section style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
             <Card>
               <p className="eyebrow">Automated steps</p>
-              <h3 style={{ fontSize: '28px', margin: '4px 0' }}>7</h3>
+              <h3 style={{ fontSize: '28px', margin: '4px 0' }}>{automatedSteps}</h3>
               <small style={{ color: 'var(--muted)' }}>Nodes in the state machine</small>
             </Card>
             <Card>
               <p className="eyebrow">Human steps</p>
-              <h3 style={{ fontSize: '28px', margin: '4px 0' }}>3</h3>
+              <h3 style={{ fontSize: '28px', margin: '4px 0' }}>{humanSteps}</h3>
               <small style={{ color: 'var(--muted)' }}>Governance checkpoints</small>
             </Card>
             <Card>
@@ -114,15 +129,23 @@ export function BlueprintPage() {
             </Card>
             <Card>
               <p className="eyebrow">Business rules</p>
-              <h3 style={{ fontSize: '28px', margin: '4px 0' }}>2</h3>
+              <h3 style={{ fontSize: '28px', margin: '4px 0', color: rules.length > 0 ? 'var(--accent)' : 'var(--muted)' }}>{rules.length}</h3>
               <small style={{ color: 'var(--muted)' }}>Enforcement policies active</small>
             </Card>
             <Card style={{ gridColumn: '1 / -1' }}>
               <p className="eyebrow">Acceptance criteria</p>
               <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5 }}>1. All invoices &gt; 5L route to CFO.</p>
-                <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5 }}>2. Duplicate invoices must be rejected.</p>
-                <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5 }}>3. PO mismatch requires Finance Manager review.</p>
+                {rules.length > 0 ? (
+                  rules.map((r, idx) => (
+                    <p key={r.id} style={{ margin: 0, fontSize: '14px', lineHeight: 1.5 }}>
+                      {idx + 1}. Rule ({r.id}): {r.description || `When ${r.condition} then ${r.action}`}
+                    </p>
+                  ))
+                ) : (
+                  <p style={{ margin: 0, fontSize: '14px', color: 'var(--muted)' }}>
+                    Workflow executes deterministically from intake trigger to terminal audit state.
+                  </p>
+                )}
               </div>
             </Card>
           </section>
@@ -150,10 +173,11 @@ export function BlueprintPage() {
                   <h3 style={{ fontSize: '16px', marginBottom: '16px', margin: 0 }}>Edit Business Rule — Approval Threshold</h3>
                   <div style={{ display: 'grid', gap: '16px', marginBottom: '24px', marginTop: '16px' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Invoices above:</label>
+                      <label htmlFor="rule-amount-input" style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>Invoices above:</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '14px', color: 'var(--muted)' }}>₹</span>
                         <input 
+                          id="rule-amount-input"
                           type="text" 
                           value={ruleAmount}
                           onChange={e => setRuleAmount(e.target.value)}
@@ -162,8 +186,9 @@ export function BlueprintPage() {
                       </div>
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>require:</label>
+                      <label htmlFor="rule-action-select" style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>require:</label>
                       <select 
+                        id="rule-action-select"
                         value={ruleAction}
                         onChange={e => setRuleAction(e.target.value)}
                         style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', width: '200px', background: 'var(--surface)', color: 'var(--text)' }}
@@ -211,11 +236,44 @@ export function BlueprintPage() {
           </section>
         )}
 
-        {/* Other Tabs placeholder */}
-        {['Workflow', 'Integrations', 'Approvals', 'Acceptance Criteria'].includes(activeTab) && (
+        {activeTab === 'Workflow' && (
           <Card>
-            <p className="eyebrow">{activeTab}</p>
-            <p style={{ marginTop: '8px', color: 'var(--muted)', margin: 0 }}>Configured according to the canonical state machine.</p>
+            <p className="eyebrow">Canonical Nodes</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+              {nodes.map(n => (
+                <div key={n.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                  <div>
+                    <strong>{n.label}</strong>
+                    <small style={{ color: 'var(--muted)', display: 'block' }}>ID: {n.id}</small>
+                  </div>
+                  <Badge status={n.type === 'human' ? 'WARNING' : 'COMPLETED'}>{n.kind || n.type}</Badge>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {activeTab === 'Integrations' && (
+          <Card>
+            <p className="eyebrow">System Connections</p>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
+              <Badge status="DEFAULT">Email Notifications (SMTP)</Badge>
+              <Badge status="DEFAULT">Purchase Order System</Badge>
+              <Badge status="DEFAULT">Enterprise ERP</Badge>
+            </div>
+          </Card>
+        )}
+
+        {activeTab === 'Acceptance Criteria' && (
+          <Card>
+            <p className="eyebrow">Validation Criteria</p>
+            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {rules.map((r, idx) => (
+                <p key={r.id} style={{ margin: 0, fontSize: '14px' }}>
+                  {idx + 1}. {r.description || `When ${r.condition} then ${r.action}`}
+                </p>
+              ))}
+            </div>
           </Card>
         )}
       </div>
