@@ -44,6 +44,9 @@ export interface WorkflowRule {
 }
 
 export interface WorkflowGraph {
+  /** 'ACTIVE' | 'DRAFT' — present in the response when the version has no graph yet */
+  status?: string;
+  workflowName?: string;
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
   rules: WorkflowRule[];

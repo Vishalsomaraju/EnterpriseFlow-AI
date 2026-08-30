@@ -77,21 +77,41 @@ export class WorkflowGraphService {
       .where('version_id', '=', versionId)
       .execute();
 
-    // 3. Normalize to domain models
+    // 3. If the version has no nodes, return a structured empty-graph response.
+    //    This correctly represents DRAFT workflows or test-scaffolded workflows that
+    //    have a version row but no graph data yet — rather than throwing a 500.
+    if (dbNodes.length === 0) {
+      const workflow = await db
+        .selectFrom('workflows')
+        .select(['name'])
+        .where('id', '=', version.workflow_id)
+        .executeTakeFirst();
+
+      return {
+        status: version.status || 'DRAFT',
+        workflowName: workflow?.name ?? undefined,
+        nodes: [],
+        edges: [],
+        rules: [],
+      };
+    }
+
+    // 4. Normalize to domain models
     const { nodes, edges, rules } = GraphNormalizer.normalize(
       dbNodes.map(n => ({ ...n, kind: n.kind || 'UNKNOWN', metadata: {} })), 
       dbEdges, 
       dbRules.map(r => ({ ...r, description: r.description || '', name: r.name || undefined, node_id: r.node_id || '' }))
     );
 
-    // 4. Validate graph integrity
+    // 5. Validate graph integrity
     const validation = GraphValidator.validate(nodes, edges);
     if (!validation.isValid) {
       throw new Error(`Invalid workflow graph: ${validation.errors.join('; ')}`);
     }
 
-    // 5. Translate Canonical Domain Model -> API DTO
+    // 6. Translate Canonical Domain Model -> API DTO
     const dto: WorkflowGraphDTO = {
+      status: version.status,
       nodes: nodes.map(n => ({
         id: n.id,
         label: n.label,

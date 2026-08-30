@@ -1,4 +1,8 @@
 export interface WorkflowGraphDTO {
+  /** 'ACTIVE' | 'DRAFT' | undefined — present when the version is not yet published */
+  status?: string;
+  /** Human-readable workflow name, included for DRAFT empty-graph responses */
+  workflowName?: string;
   nodes: {
     id: string;
     label: string;

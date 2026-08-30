@@ -40,10 +40,10 @@ export function WorkflowGraphPage() {
 
   useEffect(() => {
     if (graphData) {
-      const initialNodes = graphData.nodes.map((n) => ({
+      const initialNodes = graphData.nodes.map((n, index) => ({
         id: n.id,
         type: 'customNode',
-        position: n.position || { x: 320, y: 0 },
+        position: n.position || { x: 280, y: index * 130 + 40 },
         data: { label: n.label, kind: n.kind, type: n.type },
       }));
       const initialEdges = graphData.edges.map((e: any) => ({
@@ -101,14 +101,23 @@ export function WorkflowGraphPage() {
   const totalRules = graphData?.rules?.length || 0;
   const humanCheckpoints = graphData?.nodes?.filter(n => n.type === 'human' || n.kind?.toLowerCase().includes('human')).length || 0;
 
+  const isDraft = graphData?.status === 'DRAFT' && totalSteps === 0;
+  const pageTitle = isDraft
+    ? (graphData?.workflowName || 'Workflow')
+    : 'Deterministic State Machine';
+
   return (
     <PageContainer variant="full">
       <PageHeader 
         eyebrow="Workflow Graph" 
-        title="Deterministic State Machine"
+        title={pageTitle}
         actions={
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <Badge status="COMPLETED">Schema Validated</Badge>
+            {isDraft ? (
+              <Badge status="DEFAULT">DRAFT — No Graph Yet</Badge>
+            ) : (
+              <Badge status="COMPLETED">Schema Validated</Badge>
+            )}
             <Link to={`/app/workflows/${id}/analysis`}>
               <Button variant="secondary">Analysis</Button>
             </Link>
@@ -145,8 +154,16 @@ export function WorkflowGraphPage() {
       {totalSteps === 0 ? (
         <div style={{ marginTop: '24px' }}>
           <EmptyState
-            title="No workflow nodes found"
-            description="This workflow version has no state machine nodes mapped yet."
+            title={
+              graphData?.status === 'DRAFT'
+                ? `"${graphData?.workflowName || 'This workflow'}" is a Draft`
+                : 'No workflow nodes found'
+            }
+            description={
+              graphData?.status === 'DRAFT'
+                ? 'This workflow version is in DRAFT state and has no graph nodes persisted yet. Add steps to the workflow to see the graph here.'
+                : 'This workflow version has no state machine nodes mapped yet.'
+            }
           />
         </div>
       ) : (

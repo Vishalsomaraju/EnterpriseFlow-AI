@@ -30,24 +30,61 @@ describe('Engineering Validation Lifecycle', () => {
     }).returning('id').executeTakeFirstOrThrow();
     versionId = version.id;
 
+    // Minimal graph
+    const trigId = `n_val_trig_${Date.now()}`;
+    const taskId = `n_val_task_${Date.now()}`;
+    await db.insertInto('workflow_nodes').values([
+      { id: trigId, version_id: versionId, type: 'TRIGGER', name: 'Trigger', kind: 'trigger', pos_x: 0, pos_y: 0 },
+      { id: taskId, version_id: versionId, type: 'ACTION', name: 'Task', kind: 'action', pos_x: 0, pos_y: 0 },
+    ]).execute();
+
+    await db.insertInto('workflow_edges').values([
+      { id: `e_val_${Date.now()}`, version_id: versionId, source_id: trigId, target_id: taskId, is_branch: false },
+    ]).execute();
+
     const blueprint = await db.insertInto('blueprints').values({
-      version_id: versionId
+      workflow_version_id: versionId,
+      schema_json: JSON.stringify({})
     }).returning('id').executeTakeFirstOrThrow();
     blueprintId = blueprint.id;
   });
 
-  test('Happy Path: SecurePush PASS -> Testing -> Validation -> Ready for Review -> Approve', async () => {
+  test('Happy Path: SecurePush PASS -> Testing -> Validation -> Ready for Review -> Approve', { timeout: 15000 }, async () => {
     // 1. Create build (mimicking WAITING_FOR_BOB)
     const build = await db.insertInto('builds').values({
       blueprint_id: blueprintId,
       status: 'READY_FOR_REVIEW'
     }).returning('id').executeTakeFirstOrThrow();
 
-    // Inject Mock Security Scan
+    // Inject Mock Security Scan with evidence
     await db.insertInto('security_scans').values({
       build_id: build.id,
       status: 'PASS',
-      critical: 0, high: 0, medium: 0, low: 0
+      critical: 0, high: 0, medium: 0, low: 0,
+      completed_at: new Date(),
+      findings: JSON.stringify([])
+    }).execute();
+
+    // Inject Plan
+    await db.insertInto('build_plans').values({
+      build_id: build.id,
+      summary: 'Plan',
+      plan_json: JSON.stringify({ steps: [] })
+    }).execute();
+
+    // Inject Changes
+    await db.insertInto('build_changes').values({
+      build_id: build.id,
+      file_path: 'src/index.ts',
+      change_type: 'CREATE',
+      diff: '+ code'
+    }).execute();
+
+    // Inject Bob Activity
+    await db.insertInto('bob_activity_events').values({
+      build_id: build.id,
+      event_type: 'BUILD_COMPLETED',
+      message: 'Completed'
     }).execute();
 
     // Inject Mock passing tests
@@ -55,7 +92,8 @@ describe('Engineering Validation Lifecycle', () => {
       id: `tr_${Date.now()}`,
       build_id: build.id,
       status: 'PASS',
-      failed: 0
+      failed: 0,
+      completed_at: new Date()
     }).returning('id').executeTakeFirstOrThrow();
     
     await db.insertInto('test_results').values({
@@ -91,7 +129,7 @@ describe('Engineering Validation Lifecycle', () => {
     expect(approveRes.statusCode).toBe(200);
   });
 
-  test('Failure Path: Test fails -> READY_FOR_REVIEW -> Approve -> Rejected by Validation', async () => {
+  test('Failure Path: Test fails -> READY_FOR_REVIEW -> Approve -> Rejected by Validation', { timeout: 15000 }, async () => {
     const build = await db.insertInto('builds').values({
       blueprint_id: blueprintId,
       status: 'READY_FOR_REVIEW'

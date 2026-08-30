@@ -44,7 +44,8 @@ export class WorkflowExecutionService {
           if (!matched) {
             nodeStatus = 'FAILED';
             currentStatus = 'FAILED';
-            failureReason = 'No workflow rule matched the supplied input';
+            const ruleDescriptions = nodeRules.map(r => r.name || r.description || r.condition).join(', ');
+            failureReason = `Node ${currentNode.name} validation failed: ${ruleDescriptions}`;
           } else {
             decision = { ruleId: matched.rule.id, condition: matched.rule.condition, result: matched.result };
             const actionTarget = matched.rule.action?.match(/["']([^"']+)["']/)?.[1]?.toLowerCase();
