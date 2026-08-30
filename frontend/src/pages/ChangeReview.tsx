@@ -11,7 +11,7 @@ import { LoadingState, ErrorState } from '../components/States';
 export function ChangeReviewPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const buildOrWorkflowId = id || 'w_1043';
+  const buildOrWorkflowId = id || '0bc69865-15e0-4f30-af96-6227abee5e6c';
 
   const approveMutation = useApproveReview();
   const rejectMutation = useRejectReview();

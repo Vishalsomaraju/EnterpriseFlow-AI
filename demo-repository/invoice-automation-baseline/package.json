@@ -1,7 +1,7 @@
 {
   "name": "invoice-automation",
   "version": "1.0.0",
-  "description": "Acme Corp Invoice Automation — baseline implementation with known deficiencies. Bob's task is to implement the full acceptance criteria.",
+  "description": "Acme Corp Invoice Automation - runnable baseline target for IBM Bob.",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",

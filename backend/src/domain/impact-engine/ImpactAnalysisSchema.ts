@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const ImpactAnalysisRequestSchema = z.object({
   expression: z.string().min(1),
-  sampleInput: z.any().optional()
+  sampleInput: z.record(z.string(), z.unknown()).optional()
 });
 
 export type ImpactAnalysisRequest = z.infer<typeof ImpactAnalysisRequestSchema>;

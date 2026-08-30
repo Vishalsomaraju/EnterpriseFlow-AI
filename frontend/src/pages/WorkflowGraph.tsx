@@ -16,7 +16,7 @@ import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { PageContainer } from '../components/layout/PageContainer';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 import { WorkflowNode } from '../components/nodes/WorkflowNode';
 import { WorkflowEdge } from '../components/edges/WorkflowEdge';
@@ -25,14 +25,17 @@ import type { WorkflowRule } from '../types';
 const nodeTypes = { customNode: WorkflowNode };
 const edgeTypes = { customEdge: WorkflowEdge };
 
+const WORKFLOW_FALLBACK_ID = '0bc69865-15e0-4f30-af96-6227abee5e6c';
+
 export function WorkflowGraphPage() {
+  const { id = WORKFLOW_FALLBACK_ID } = useParams();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [rules, setRules] = useState<WorkflowRule[]>([]);
   
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
-  const { data: graphData } = useWorkflowGraph('w_1043');
+  const { data: graphData } = useWorkflowGraph(id);
 
   useEffect(() => {
     if (graphData) {
@@ -70,7 +73,7 @@ export function WorkflowGraphPage() {
         actions={
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <Badge status="COMPLETED">Schema validated</Badge>
-            <Link to="/app/workflows/w_1043/impact">
+            <Link to={`/app/workflows/${id}/impact`}>
               <Button>View impact</Button>
             </Link>
           </div>

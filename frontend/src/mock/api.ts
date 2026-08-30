@@ -105,7 +105,7 @@ export const MockApi = {
     });
   },
 
-  analyzeRuleImpact: (_ruleId: string): Promise<ImpactAnalysisResult> => {
+  analyzeRuleImpact: (_ruleId: string, _expression: string): Promise<ImpactAnalysisResult> => {
     return delay({
       affected_files: ['src/approval.service.ts', 'src/routing.ts', 'src/review-summary.ts'],
       affected_tests: ['tests/approval.test.ts', 'tests/routing.test.ts', 'tests/manager-route.test.ts', 'tests/cfo-route.test.ts', 'tests/regression.test.ts'],

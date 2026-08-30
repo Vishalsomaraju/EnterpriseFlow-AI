@@ -70,4 +70,12 @@ export interface ImpactAnalysisResponse {
 export interface BuildChangesResponse {
   diff: string;
   files_changed: number;
+  files?: Array<{
+    file_path: string;
+    change_type: string;
+    diff?: string | null;
+    additions?: number;
+    deletions?: number;
+    status?: 'modified' | 'added' | 'deleted';
+  }>;
 }

@@ -2,18 +2,29 @@ import { useState } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Card } from '../components/Card';
+import { useActivity, useProjects } from '../hooks/queries';
+import { LoadingState, ErrorState } from '../components/States';
 
 export function ActivityPage() {
   const [filter, setFilter] = useState('All');
+  const { data: projects, isLoading: projectsLoading, error: projectsError } = useProjects();
+  const projectId = projects?.[0]?.id;
+  const { data: activity, isLoading: activityLoading, error: activityError } = useActivity(projectId);
   const filters = ['All', 'Workflow', 'Build', 'Test', 'Approval', 'Rule Change'];
 
-  const timeline = [
-    { id: 1, type: 'Rule Change', text: 'Approval threshold shifted to ₹10L by Admin.', time: '2 hours ago' },
-    { id: 2, type: 'Approval', text: 'Sarah Jenkins approved INV-1043.', time: '4 hours ago' },
-    { id: 3, type: 'Build', text: 'IBM Bob successfully implemented boundary logic.', time: '1 day ago' },
-    { id: 4, type: 'Test', text: 'Regression suite 27/27 passed.', time: '1 day ago' },
-    { id: 5, type: 'Workflow', text: 'Invoice Approval workflow activated.', time: '3 days ago' },
-  ];
+  if (projectsLoading || activityLoading) {
+    return <PageContainer><PageHeader eyebrow="Workspace" title="Global Activity" /><LoadingState message="Loading activity..." /></PageContainer>;
+  }
+  if (projectsError || activityError) {
+    return <PageContainer><PageHeader eyebrow="Workspace" title="Global Activity" /><ErrorState error={projectsError || activityError} message="Failed to load activity." /></PageContainer>;
+  }
+
+  const timeline = (activity || []).map((item) => ({
+    id: item.id,
+    type: item.event_type || 'Workflow',
+    text: item.message || item.title,
+    time: new Date(item.timestamp).toLocaleString(),
+  }));
 
   const filtered = filter === 'All' ? timeline : timeline.filter(t => t.type === filter);
 

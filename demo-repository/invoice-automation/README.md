@@ -1,62 +1,40 @@
-# Invoice Automation — Baseline
+# Invoice Automation
 
-> **This is the deliberately imperfect baseline implementation.**
-> It exists as the starting point for IBM Bob's implementation task.
+This is the target repository for the EnterpriseFlow and IBM
+Bob demo. It models a legacy invoice approval workflow with separate
+validation, processing, routing, and approval modules.
 
-## The Problem
+## Approval rule
 
-Acme Corp's invoice approval process has grown organically over years. The current codebase works for simple cases but has **known deficiencies** that create risk and compliance gaps.
+The approval policy is stored in `src/config/rules.json` and loaded at runtime:
 
-## Known Deficiencies
+- `amount >= 1,000,000` routes to **CFO** (secondary approval required)
+- `amount < 1,000,000` routes to **Finance Manager**
 
-| # | Deficiency | File | Risk |
-|---|---|---|---|
-| 1 | No vendor validation — unknown vendors accepted | `src/validation/InvoiceValidator.ts` | HIGH |
-| 2 | No duplicate invoice detection | `src/validation/InvoiceValidator.ts` | HIGH |
-| 3 | No PO validation for large invoices | `src/validation/InvoiceValidator.ts` | MEDIUM |
-| 4 | Negative/zero amounts accepted | `src/validation/InvoiceValidator.ts` | MEDIUM |
-| 5 | Audit decisions logged to console only | `src/approval/ApprovalGate.ts` | HIGH |
-| 6 | CFO invoices don't require secondary approval | `src/approval/ApprovalGate.ts` | HIGH |
-| 7 | WorkflowRouter ignores dynamic rules | `src/routing/WorkflowRouter.ts` | MEDIUM |
+The CFO route requires secondary approval. Approval decisions produce an
+in-memory audit entry containing the invoice, vendor, amount, assignee, and
+timestamp.
 
-## Business Rule
-
-The approval threshold is configured in `src/config/rules.json`.
-
-**Current threshold:** `₹5,00,000`
-
-Invoices at or above the threshold → **CFO**
-Invoices below the threshold → **Finance Manager**
-
-> ⚠️ The threshold value in `rules.json` is the **single source of truth**.
-> Source code must read it at runtime — never hardcode the threshold.
-
-## Running Tests
+## Run
 
 ```bash
 npm install
+npm run build
 npm test
 ```
 
-**Baseline test results:** 4 passing, 17 pending (todo)
-
-Bob's task is to implement all 17 pending acceptance criteria.
+The executable test suite covers valid and invalid vendors, duplicate
+invoices, purchase orders, low and high values, routing, approval, and audit
+behavior. The repository intentionally has no required `it.todo` tests.
 
 ## Structure
 
-```
-invoice-automation/
-├── src/
-│   ├── config/
-│   │   └── rules.json          ← business rules (single source of truth)
-│   ├── invoice/
-│   │   └── InvoiceProcessor.ts ← core routing logic
-│   ├── approval/
-│   │   └── ApprovalGate.ts     ← approval decisions + audit
-│   ├── routing/
-│   │   └── WorkflowRouter.ts   ← dynamic rule evaluation (incomplete)
-│   └── validation/
-│       └── InvoiceValidator.ts ← input validation (incomplete)
-└── tests/
-    └── invoice.test.ts         ← baseline tests + acceptance stubs
+```text
+src/
+  approval/ApprovalGate.ts
+  config/rules.json
+  invoice/InvoiceProcessor.ts
+  routing/WorkflowRouter.ts
+  validation/InvoiceValidator.ts
+tests/invoice.test.ts
 ```

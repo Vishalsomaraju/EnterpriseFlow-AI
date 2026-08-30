@@ -1,9 +1,10 @@
 import { db } from '../../db/index';
 import { ImpactAnalysisResponse, ImpactComponent } from '../../domain/impact-engine/ImpactAnalysisSchema';
+import { RuleEvaluator } from '../../domain/workflow-engine/RuleEvaluator';
 
 export class RuleService {
 
-  async analyzeRuleImpact(ruleId: string, proposedExpression: string, sampleInput?: any): Promise<ImpactAnalysisResponse> {
+  async analyzeRuleImpact(ruleId: string, proposedExpression: string, sampleInput?: Record<string, unknown>): Promise<ImpactAnalysisResponse> {
     const rule = await db.selectFrom('business_rules').where('id', '=', ruleId).selectAll().executeTakeFirst();
     if (!rule) throw new Error('Rule not found');
 
@@ -22,18 +23,18 @@ export class RuleService {
       let compName = dep.target_id;
       let reason = `Dependent on business rule: ${rule.name || ruleId}`;
 
-      if (dep.target_type === 'WORKFLOW_NODE') {
+      if (dep.target_type === 'WORKFLOW_NODE' || dep.target_type === 'NODE') {
         const node = await db.selectFrom('workflow_nodes').where('id', '=', dep.target_id).selectAll().executeTakeFirst();
         if (node) compName = `${node.name} (${node.type})`;
         affectedNodes.push(compName);
       } else if (dep.target_type === 'SOURCE_FILE') {
-        compName = dep.target_id || 'src/invoice/InvoiceProcessor.ts';
+        compName = dep.target_id;
         affectedFiles.push(compName);
       } else if (dep.target_type === 'TEST_FILE') {
-        compName = dep.target_id || 'tests/invoice.test.ts';
+        compName = dep.target_id;
         affectedTests.push(compName);
       } else if (dep.target_type === 'DOC_FILE') {
-        compName = dep.target_id || 'README.md';
+        compName = dep.target_id;
         affectedDocs.push(compName);
       }
 
@@ -45,57 +46,57 @@ export class RuleService {
         severity: 'LOW'
       };
 
-      if (dep.target_type === 'WORKFLOW_NODE') {
+      if (dep.target_type === 'WORKFLOW_NODE' || dep.target_type === 'NODE') {
         comp.severity = 'MEDIUM';
         highestSeverity = highestSeverity === 'LOW' ? 'MEDIUM' : highestSeverity;
-      }
-
-      // Determine severity heuristically for demonstration
-      if (proposedExpression.includes('1000000') || proposedExpression.includes('10L')) {
-        comp.severity = 'HIGH';
-        highestSeverity = 'CRITICAL';
       }
 
       directImpact.push(comp);
     }
 
-    if (affectedFiles.length === 0) {
-      affectedFiles.push('src/invoice/InvoiceProcessor.ts', 'src/config/rules.json', 'src/routing/WorkflowRouter.ts');
+    const dependentNodeIds = dependencies.filter(dep => dep.target_type === 'WORKFLOW_NODE' || dep.target_type === 'NODE').map(dep => dep.target_id);
+    const edges = await db.selectFrom('workflow_edges').where('version_id', '=', rule.version_id).selectAll().execute();
+    const visited = new Set(dependentNodeIds);
+    const queue = [...dependentNodeIds];
+    while (queue.length > 0) {
+      const sourceId = queue.shift()!;
+      for (const edge of edges.filter(candidate => candidate.source_id === sourceId)) {
+        if (!visited.has(edge.target_id)) {
+          visited.add(edge.target_id);
+          queue.push(edge.target_id);
+          const node = await db.selectFrom('workflow_nodes').where('id', '=', edge.target_id).selectAll().executeTakeFirst();
+          if (node) {
+            downstreamImpact.push({
+              id: node.id,
+              type: 'WORKFLOW_NODE',
+              name: `${node.name} (${node.type})`,
+              reason: `Downstream of dependent workflow node ${sourceId}`,
+              severity: 'MEDIUM'
+            });
+          }
+        }
+      }
     }
-    if (affectedTests.length === 0) {
-      affectedTests.push('tests/invoice.test.ts', 'tests/acceptance.test.ts');
-    }
-    if (affectedDocs.length === 0) {
-      affectedDocs.push('README.md', 'docs/architecture.md');
-    }
-    if (affectedNodes.length === 0) {
-      const nodes = await db.selectFrom('workflow_nodes').where('version_id', '=', rule.version_id).selectAll().execute();
-      affectedNodes.push(...nodes.map(n => `${n.name} (${n.type})`));
-    }
+    const changed = rule.condition !== proposedExpression;
+    if (changed && directImpact.length > 0) highestSeverity = 'HIGH';
+    else if (!changed) highestSeverity = 'LOW';
 
-    // Evaluate before/after if sampleInput is provided
-    let evaluation: { input: any, before?: string, after?: string } | undefined = undefined;
-    if (sampleInput || true) {
-      const input = sampleInput || { amount: 800000, vendor: 'Acme Corp' };
-      const amount = input.amount || 0;
-      
-      // OLD Logic (< 500k vs >= 500k)
-      let before = amount >= 500000 ? 'assign_to("CFO")' : 'assign_to("Finance Manager")';
-      
-      // NEW Logic (< 1M vs >= 1M)
-      let after = amount >= 1000000 ? 'assign_to("CFO")' : 'assign_to("Finance Manager")';
-
+    // Evaluate before/after using the stored and proposed expressions.
+    let evaluation: { input: Record<string, unknown>, before?: string, after?: string } | undefined = undefined;
+    if (sampleInput) {
+      const beforeResult = RuleEvaluator.evaluate(rule.condition, sampleInput);
+      const afterResult = RuleEvaluator.evaluate(proposedExpression, sampleInput);
       evaluation = {
-        input,
-        before,
-        after
+        input: sampleInput,
+        before: `${rule.action || 'rule'}: ${beforeResult.matched}`,
+        after: `${rule.action || 'rule'}: ${afterResult.matched}`
       };
     }
 
     await db.insertInto('activity_events').values({
       id: `act_${Date.now()}_impact`,
       title: 'Rule Impact Analyzed',
-      message: `Impact analyzed for rule ${ruleId}: ₹5L → ₹10L`,
+      message: `Impact analyzed for rule ${ruleId}: ${rule.condition} -> ${proposedExpression}`,
       source: 'SYSTEM',
       event_type: 'RULE_IMPACT_ANALYZED',
       status: 'SUCCESS',
@@ -111,8 +112,8 @@ export class RuleService {
       directImpact,
       downstreamImpact,
       risk: {
-        level: highestSeverity === 'LOW' ? 'HIGH' : highestSeverity,
-        reason: 'Rule modifies core approval threshold (INR 5,00,000 -> 10,00,000).'
+        level: highestSeverity,
+        reason: changed ? 'Stored rule expression changed and its persisted dependencies require review.' : 'No rule change detected. No impact analysis required.'
       },
       evaluation,
       affected_files: affectedFiles,
@@ -229,24 +230,17 @@ export class RuleService {
       };
     });
 
-    // Auto-generate Blueprint & Bob Workspace for the new version
-    try {
-      const { BlueprintService } = await import('../blueprint/BlueprintService');
-      const { blueprint } = await BlueprintService.generateAndPersistBlueprint(result.workflowId);
-      
-      const { bobWorkspaceManager } = await import('../build/BobWorkspaceManager');
-      const blueprintRecord = await db.selectFrom('blueprints').where('workflow_version_id', '=', result.newVersionId).selectAll().executeTakeFirst();
-      if (blueprintRecord) {
-        await bobWorkspaceManager.generateWorkspace(
-          `build-${Date.now()}`,
-          blueprintRecord.id,
-          result.newVersionId,
-          blueprint
-        );
-      }
-    } catch (e) {
-      console.warn('Auto-generation of workspace on rule change skipped or failed:', e);
-    }
+    const { BlueprintService } = await import('../blueprint/BlueprintService');
+    await BlueprintService.generateAndPersistBlueprint(result.workflowId);
+    const blueprintRecord = await db.selectFrom('blueprints')
+      .where('workflow_version_id', '=', result.newVersionId)
+      .selectAll()
+      .executeTakeFirstOrThrow();
+    const { JobService } = await import('../../jobs/JobService');
+    const { JobType } = await import('../../jobs/types');
+    const { JobWorker } = await import('../../jobs/JobWorker');
+    const jobId = await JobService.createJob(JobType.IMPLEMENTATION, 'blueprint', blueprintRecord.id);
+    JobWorker.dispatch(jobId, JobType.IMPLEMENTATION, blueprintRecord.id);
 
     return {
       newVersionId: result.newVersionId,

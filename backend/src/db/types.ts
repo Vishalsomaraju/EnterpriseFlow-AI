@@ -178,6 +178,8 @@ export interface TestRunTable {
   commit_hash: string | null;
   exit_code: number | null;
   is_demo: boolean | null;
+  stdout: string | null;
+  stderr: string | null;
   started_at: Date | null;
   completed_at: Date | null;
 }
@@ -202,6 +204,10 @@ export interface SecurityScanTable {
   high: number | null;
   medium: number | null;
   low: number | null;
+  findings: unknown;
+  evidence_path: string | null;
+  started_at: Date | null;
+  completed_at: Date | null;
 }
 
 export interface DocumentationArtifactTable {

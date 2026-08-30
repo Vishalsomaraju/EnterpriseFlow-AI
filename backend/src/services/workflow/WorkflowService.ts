@@ -160,6 +160,35 @@ export class WorkflowService {
         }
       }
 
+      await trx.insertInto('activity_events').values([
+        {
+          id: `workflow-created-${workflowId}`,
+          title: 'Workflow Created',
+          message: `Workflow ${workflowId} created from extraction job ${jobId}`,
+          source: 'EXTRACTION',
+          event_type: 'WORKFLOW_CREATED',
+          status: 'SUCCESS',
+          project_id: projectId,
+          entity_type: 'WORKFLOW',
+          entity_id: workflowId,
+          workflow_version: versionId,
+          metadata: { documentId, jobId, ruleCount: rules.length }
+        },
+        {
+          id: `extraction-completed-${jobId}`,
+          title: 'Extraction Completed',
+          message: `Workflow extraction persisted for ${workflowId}`,
+          source: 'EXTRACTION',
+          event_type: 'EXTRACTION_COMPLETED',
+          status: 'SUCCESS',
+          project_id: projectId,
+          entity_type: 'WORKFLOW_VERSION',
+          entity_id: versionId,
+          workflow_version: versionId,
+          metadata: { documentId, jobId }
+        }
+      ]).execute();
+
       // 8. Mark Job Completed
       await trx.updateTable('jobs')
         .set({

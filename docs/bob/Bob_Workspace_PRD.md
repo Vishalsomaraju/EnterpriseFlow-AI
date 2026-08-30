@@ -18,26 +18,33 @@ The sequence of Bob's execution must strictly follow this path:
 
 ## Workspace Structure
 
-The `bob-workspace/` directory provides the context and evidence for Bob's actions.
+The `bob-workspace/builds/<build-id>/` directory provides an isolated context
+and evidence package for each Bob session. EnterpriseFlow creates this package
+but does not write application code into the target repository.
 
 ```text
 bob-workspace/
-├── AGENTS.md (The engineering instructions for Bob)
-├── BOB.md (The evidence chain document)
-├── prompts/
-│   ├── 01-analyze-repository.md
-│   ├── 02-implement-workflow.md
-│   ├── 03-generate-tests.md
-│   ├── 04-fix-failing-tests.md
-│   └── 05-update-documentation.md
-├── plans/
-│   ├── implementation-plan.md
-│   └── change-plan.md
-└── evidence/
-    ├── bob-session-notes.md
-    ├── changes.md
-    └── validation.md
+└── builds/<build-id>/
+    ├── AGENTS.md
+    ├── BOB.md
+    ├── manifest.json
+    ├── blueprint.json
+    ├── rules.json
+    ├── plans/
+    │   └── implementation-plan.md
+    ├── activities/
+    ├── changes/
+    ├── tests/
+    ├── security/
+    └── documentation/
 ```
+
+Bob is invoked through the supported local/IDE Bob environment using the
+repository path and instructions in `BOB.md`; EnterpriseFlow does not invent a
+Bob HTTP API or substitute a deterministic code writer. Evidence is accepted
+only when its build and Bob session IDs match `manifest.json`, and repository
+change evidence must be present in the target repository Git diff from the
+recorded baseline commit.
 
 ## Evidence Chain (`BOB.md`)
 

@@ -4,10 +4,11 @@ import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { JobWorker } from '../../jobs/JobWorker';
 import { JobType } from '../../jobs/types';
+import { WorkflowExecutionInputSchema } from '../../domain/workflow-engine/ExecutionInputSchema';
 
 const ExecutePayloadSchema = z.object({
   versionId: z.string(),
-  invoiceData: z.any(),
+  invoiceData: WorkflowExecutionInputSchema,
   idempotencyKey: z.string().optional()
 });
 

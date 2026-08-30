@@ -35,7 +35,7 @@ export class WorkflowGraphService {
 
     const dbRules = await db
       .selectFrom('business_rules')
-      .select(['id', 'name', 'description', 'condition', 'node_id'])
+      .select(['id', 'name', 'description', 'condition', 'action', 'node_id'])
       .where('version_id', '=', versionId)
       .execute();
 
@@ -43,15 +43,13 @@ export class WorkflowGraphService {
     const { nodes, edges, rules } = GraphNormalizer.normalize(
       dbNodes.map(n => ({ ...n, kind: n.kind || 'UNKNOWN', metadata: {} })), 
       dbEdges, 
-      dbRules.map(r => ({ ...r, action: undefined, description: r.description || '', name: r.name || undefined, node_id: r.node_id || '' }))
+      dbRules.map(r => ({ ...r, description: r.description || '', name: r.name || undefined, node_id: r.node_id || '' }))
     );
 
     // 4. Validate graph integrity
     const validation = GraphValidator.validate(nodes, edges);
     if (!validation.isValid) {
-      // Depending on product requirements, we might still return the graph 
-      // but with validation errors. For now, log them.
-      console.warn('Graph validation failed:', validation.errors);
+      throw new Error(`Invalid workflow graph: ${validation.errors.join('; ')}`);
     }
 
     // 5. Translate Canonical Domain Model -> API DTO

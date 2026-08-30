@@ -2,7 +2,7 @@
   "approvalThreshold": 500000,
   "currency": "INR",
   "version": 1,
-  "ruleId": "placeholder",
+  "ruleId": "invoice-approval-threshold-v1",
   "condition": "amount >= 500000",
-  "_comment": "This file is the SINGLE SOURCE OF TRUTH for business rules. Written by EnterpriseFlow before Bob runs. Do not hardcode these values in source code — read from this file at runtime."
+  "_comment": "Baseline policy. Read at runtime so IBM Bob can update the rule safely."
 }

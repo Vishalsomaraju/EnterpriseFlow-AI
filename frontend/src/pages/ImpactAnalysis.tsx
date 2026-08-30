@@ -1,163 +1,482 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ReactFlow, Controls, Background, BackgroundVariant, useNodesState, useEdgesState } from '@xyflow/react';
+import {
+  ReactFlow,
+  Controls,
+  Background,
+  BackgroundVariant,
+  useNodesState,
+  useEdgesState,
+} from '@xyflow/react';
 import type { Node, Edge, NodeMouseHandler } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import { PageHeader } from '../components/PageHeader';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { Badge } from '../components/Badge';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ImpactNode } from '../components/nodes/ImpactNode';
+import type { ImpactNodeType } from '../components/nodes/ImpactNode';
 import { WorkflowEdge } from '../components/edges/WorkflowEdge';
-import { useImpactAnalysis } from '../hooks/queries';
-import { LoadingState, ErrorState } from '../components/States';
+import { useWorkflowGraph, useImpactAnalysis } from '../hooks/queries';
+import { LoadingState, ErrorState, EmptyState } from '../components/States';
+import type { ImpactAnalysisResponse } from '../api/types';
+import type { BadgeStatus } from '../components/Badge';
+
+const WORKFLOW_ID = '0bc69865-15e0-4f30-af96-6227abee5e6c';
+const RULE_ID = 'RULE-manager-approval';
 
 const nodeTypes = { impactNode: ImpactNode };
 const edgeTypes = { customEdge: WorkflowEdge };
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function riskToBadgeStatus(level?: string): BadgeStatus {
+  switch (level) {
+    case 'CRITICAL': return 'DANGER';
+    case 'HIGH': return 'DANGER';
+    case 'MEDIUM': return 'WARNING';
+    case 'LOW': return 'ACTIVE';
+    default: return 'DEFAULT';
+  }
+}
+
+function severityToVariant(severity: string): ImpactNodeType['data']['variant'] {
+  switch (severity) {
+    case 'CRITICAL': return 'danger';
+    case 'HIGH': return 'danger';
+    case 'MEDIUM': return 'warning';
+    default: return 'info';
+  }
+}
+
+/** Build ReactFlow nodes + edges from an ImpactAnalysisResponse. */
+function buildGraphFromImpact(impact: ImpactAnalysisResponse): { nodes: Node[]; edges: Edge[] } {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  // Root node: the changed rule
+  nodes.push({
+    id: 'rule-root',
+    type: 'impactNode',
+    position: { x: 50, y: 200 },
+    data: {
+      label: 'RULE',
+      title: impact.rule?.id ?? RULE_ID,
+      description: impact.rule
+        ? `${impact.rule.oldExpression} → ${impact.rule.newExpression}`
+        : 'Rule analyzed',
+      variant: impact.rule?.oldExpression !== impact.rule?.newExpression ? 'warning' : 'info',
+    } satisfies ImpactNodeType['data'],
+  });
+
+  const directItems = impact.directImpact ?? [];
+  const downstreamItems = impact.downstreamImpact ?? [];
+
+  // Direct impact nodes
+  directItems.forEach((comp, i) => {
+    const id = `direct-${i}`;
+    nodes.push({
+      id,
+      type: 'impactNode',
+      position: { x: 380, y: 80 + i * 180 },
+      data: {
+        label: comp.type,
+        title: comp.name,
+        description: comp.reason,
+        metrics: comp.severity,
+        variant: severityToVariant(comp.severity),
+      } satisfies ImpactNodeType['data'],
+    });
+    edges.push({ id: `e-root-${id}`, source: 'rule-root', target: id, type: 'customEdge' });
+  });
+
+  // Downstream impact nodes
+  downstreamItems.forEach((comp, i) => {
+    const id = `downstream-${i}`;
+    // Attach downstream to the last direct-impact node or to the root
+    const parentId = directItems.length > 0 ? `direct-${directItems.length - 1}` : 'rule-root';
+    nodes.push({
+      id,
+      type: 'impactNode',
+      position: { x: 710, y: 80 + i * 180 },
+      data: {
+        label: comp.type,
+        title: comp.name,
+        description: comp.reason,
+        metrics: comp.severity,
+        variant: severityToVariant(comp.severity),
+      } satisfies ImpactNodeType['data'],
+    });
+    edges.push({ id: `e-down-${id}`, source: parentId, target: id, type: 'customEdge' });
+  });
+
+  // If there is nothing to show, add a placeholder node
+  if (nodes.length === 1) {
+    nodes.push({
+      id: 'no-deps',
+      type: 'impactNode',
+      position: { x: 380, y: 200 },
+      data: {
+        label: 'INFO',
+        title: 'No dependencies found',
+        description: 'No workflow nodes, files, or tests are registered as dependents of this rule.',
+        variant: 'info',
+      } satisfies ImpactNodeType['data'],
+    });
+    edges.push({ id: 'e-root-no-deps', source: 'rule-root', target: 'no-deps', type: 'customEdge' });
+  }
+
+  return { nodes, edges };
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
 export function ImpactAnalysisPage() {
-  const { data: impact, isLoading, error } = useImpactAnalysis('R-001');
-  const [selectedNodeData, setSelectedNodeData] = useState<any>(null);
+  // Load the workflow graph so we can show the current rule expression
+  const { data: graph, isLoading: graphLoading, error: graphError } = useWorkflowGraph(WORKFLOW_ID);
 
-  const initialNodes: Node[] = [
-    { id: 'n1', type: 'impactNode', position: { x: 50, y: 150 }, data: { label: 'RULE', type: 'Business Rule', name: 'Approval Threshold', reason: 'Value updated to ₹10L', dependency: 'User Configuration', status: 'Modified', variant: 'warning' } },
-    { id: 'n2', type: 'impactNode', position: { x: 300, y: 150 }, data: { label: 'WORKFLOW', type: 'Graph Node', name: 'Approval Router', reason: 'Branch conditions evaluated dynamically', dependency: 'Business Rule (RULE)', status: 'Modified', variant: 'info' } },
-    { id: 'n3', type: 'impactNode', position: { x: 550, y: 150 }, data: { label: 'BLUEPRINT', type: 'Automation Schema', name: 'Approval Service Contract', reason: 'Routing mapping impacted', dependency: 'Workflow Node (WORKFLOW)', status: 'Modified', variant: 'info' } },
-    { id: 'n4', type: 'impactNode', position: { x: 800, y: 150 }, data: { label: 'CODE', type: 'Source File', name: 'approval.service.ts', reason: 'AST rewrite triggered for boundary', dependency: 'Blueprint (BLUEPRINT)', status: 'Modified', variant: 'ai' } },
-    { id: 'n5', type: 'impactNode', position: { x: 1050, y: 50 }, data: { label: 'TESTS', type: 'Test Suite', name: 'Regression', reason: 'Test assertions require boundary alignment', dependency: 'Code (CODE)', status: 'Modified', variant: 'success' } },
-    { id: 'n6', type: 'impactNode', position: { x: 1050, y: 250 }, data: { label: 'DOCS', type: 'API Spec', name: 'API Documentation', reason: 'Downstream effect of code modifications', dependency: 'Code (CODE)', status: 'Modified', variant: 'info' } },
-    { id: 'n7', type: 'impactNode', position: { x: 1300, y: 150 }, data: { label: 'REVIEW', type: 'Governance', name: 'Human Review Gate', reason: 'Approval required for upstream changes', dependency: 'Tests & Docs', status: 'Pending', variant: 'warning' } },
-  ];
+  // The expression that the user is currently typing (draft)
+  const [draftExpression, setDraftExpression] = useState('');
 
-  const initialEdges: Edge[] = [
-    { id: 'e1', source: 'n1', target: 'n2', type: 'customEdge' },
-    { id: 'e2', source: 'n2', target: 'n3', type: 'customEdge' },
-    { id: 'e3', source: 'n3', target: 'n4', type: 'customEdge' },
-    { id: 'e4', source: 'n4', target: 'n5', type: 'customEdge' },
-    { id: 'e5', source: 'n4', target: 'n6', type: 'customEdge' },
-    { id: 'e6', source: 'n5', target: 'n7', type: 'customEdge' },
-    { id: 'e7', source: 'n6', target: 'n7', type: 'customEdge' },
-  ];
+  // The expression that was submitted for analysis (only set when user clicks Analyze)
+  const [submittedExpression, setSubmittedExpression] = useState<string | undefined>(undefined);
 
-  const [nodes, , onNodesChange] = useNodesState<Node>(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState<Edge>(initialEdges);
+  const currentRule = graph?.rules?.find(r => r.id === RULE_ID);
+
+  // Pre-populate the draft with the current rule's condition once when it loads.
+  // Uses an initialised flag via functional state update to avoid a second render.
+  useEffect(() => {
+    if (currentRule?.condition) {
+      setDraftExpression(prev => (prev === '' ? currentRule.condition! : prev));
+    }
+  }, [currentRule?.condition]);
+
+  // The impact query — only fires when submittedExpression has a value
+  const {
+    data: impact,
+    isLoading: impactLoading,
+    error: impactError,
+  } = useImpactAnalysis(RULE_ID, submittedExpression);
+
+  // ReactFlow state — rebuilt whenever impact data changes
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  const [selectedNodeData, setSelectedNodeData] = useState<ImpactNodeType['data'] | null>(null);
+
+  useEffect(() => {
+    if (!impact) {
+      setNodes([]);
+      setEdges([]);
+      return;
+    }
+    const graphData = buildGraphFromImpact(impact);
+    setNodes(graphData.nodes);
+    setEdges(graphData.edges);
+    setSelectedNodeData(null);
+  }, [impact, setNodes, setEdges, setSelectedNodeData]);
 
   const onNodeClick: NodeMouseHandler = useCallback((_event, node) => {
-    setSelectedNodeData(node.data);
-  }, []);
+    setSelectedNodeData(node.data as ImpactNodeType['data']);
+  }, [setSelectedNodeData]);
 
-  if (isLoading) {
+  const handleAnalyze = useCallback(() => {
+    const trimmed = draftExpression.trim();
+    if (!trimmed) return;
+    setSubmittedExpression(trimmed);
+    setSelectedNodeData(null);
+  }, [draftExpression, setSelectedNodeData]);
+
+  // ------------------------------------------------------------------
+  // Render
+  // ------------------------------------------------------------------
+
+  if (graphLoading) {
     return (
       <PageContainer variant="full">
-        <PageHeader eyebrow="Impact Analysis" title="EnterpriseFlow Propagation Map" />
-        <LoadingState message="Calculating change impact..." />
+        <PageHeader eyebrow="Impact Analysis" title="Rule Impact Analyzer" />
+        <LoadingState message="Loading rule data..." />
       </PageContainer>
     );
   }
 
-  if (error || !impact) {
+  if (graphError) {
     return (
       <PageContainer variant="full">
-        <PageHeader eyebrow="Impact Analysis" title="EnterpriseFlow Propagation Map" />
-        <ErrorState error={error} message="Failed to load impact analysis." />
+        <PageHeader eyebrow="Impact Analysis" title="Rule Impact Analyzer" />
+        <ErrorState error={graphError} message="Failed to load workflow rule data." />
       </PageContainer>
     );
   }
+
+  const isChanged = impact && impact.rule
+    ? impact.rule.oldExpression !== impact.rule.newExpression
+    : false;
+
+  const trimmedDraft = draftExpression.trim();
+  const canAnalyze = trimmedDraft.length > 0;
 
   return (
     <PageContainer variant="full">
-      <PageHeader 
-        eyebrow="Impact Analysis" 
-        title="EnterpriseFlow Propagation Map"
+      <PageHeader
+        eyebrow="Impact Analysis"
+        title="Rule Impact Analyzer"
         actions={
-          <Link to="/app/workflows/w_1043/graph">
-            <Button variant="primary">Back to graph</Button>
+          <Link to={`/app/workflows/${WORKFLOW_ID}/graph`}>
+            <Button variant="secondary">Back to graph</Button>
           </Link>
         }
       />
 
-      <section style={{ marginTop: '24px', marginBottom: '24px', display: 'flex', gap: '32px', alignItems: 'stretch' }}>
-        <Card style={{ flex: 1 }}>
-          <p className="eyebrow">Business rule changed</p>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text)', margin: '4px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span>₹5,00,000</span>
-            <span style={{ color: 'var(--muted)', fontSize: '20px' }}>→</span>
-            <span>₹10,00,000</span>
-          </div>
-        </Card>
-        
-        <Card style={{ flex: 2 }}>
-          <p className="eyebrow">Affected components</p>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-            {['Approval Router', 'Approval Service', 'Workflow Graph', 'Tests', 'API Documentation'].map(item => (
-              <span key={item} className="pill" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}>
-                {item}
-              </span>
-            ))}
-          </div>
-        </Card>
-      </section>
-
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '24px', height: '600px' }}>
-        <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', overflow: 'hidden' }}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeClick={onNodeClick}
-            fitView
-            minZoom={0.5}
-            maxZoom={1.5}
-          >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-            <Controls />
-          </ReactFlow>
-        </div>
-
+      {/* ── Expression editor ─────────────────────────────────────────── */}
+      <section style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <Card>
-          {selectedNodeData ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div>
-                <span style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Node Inspector</span>
-                <h3 style={{ fontSize: '20px', marginTop: '8px', color: 'var(--accent)', margin: 0 }}>{selectedNodeData.label}</h3>
-              </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Type</label>
-                  <div style={{ fontSize: '14px', fontWeight: 500 }}>{selectedNodeData.type}</div>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Name</label>
-                  <div style={{ fontSize: '14px', fontWeight: 500 }}>{selectedNodeData.name}</div>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Reason Affected</label>
-                  <div style={{ fontSize: '14px', lineHeight: 1.5 }}>{selectedNodeData.reason}</div>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Source Dependency</label>
-                  <div style={{ fontSize: '14px', padding: '4px 8px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '4px', display: 'inline-block' }}>{selectedNodeData.dependency}</div>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Affected Status</label>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: selectedNodeData.status === 'Modified' ? 'var(--warning)' : 'var(--text)' }}>
-                    {selectedNodeData.status}
-                  </div>
-                </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'end' }}>
+            {/* Current expression */}
+            <div>
+              <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Current rule · {RULE_ID}
+              </label>
+              <div
+                data-testid="current-expression"
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: '14px',
+                  padding: '10px 14px',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--muted)',
+                  minHeight: '40px',
+                }}
+              >
+                {currentRule?.condition ?? <em>Not found</em>}
               </div>
             </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--muted)', fontSize: '14px', textAlign: 'center' }}>
-              Select a node in the graph<br/>to view propagation impact
+
+            {/* Proposed expression */}
+            <div>
+              <label
+                htmlFor="proposed-expression"
+                style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+              >
+                Proposed expression
+              </label>
+              <input
+                id="proposed-expression"
+                data-testid="proposed-expression-input"
+                type="text"
+                value={draftExpression}
+                onChange={e => setDraftExpression(e.target.value)}
+                placeholder="e.g. amount < 500000"
+                style={{
+                  width: '100%',
+                  fontFamily: 'monospace',
+                  fontSize: '14px',
+                  padding: '10px 14px',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--text)',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                }}
+              />
             </div>
-          )}
+          </div>
+
+          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Button
+              variant="primary"
+              onClick={handleAnalyze}
+              disabled={!canAnalyze}
+              data-testid="analyze-button"
+            >
+              Analyze Impact
+            </Button>
+            {!canAnalyze && (
+              <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                Enter a proposed expression to analyze its impact.
+              </span>
+            )}
+          </div>
         </Card>
       </section>
+
+      {/* ── Impact result area ────────────────────────────────────────── */}
+      {submittedExpression && (
+        <section style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {impactLoading && <LoadingState message="Calculating change impact..." />}
+
+          {!impactLoading && impactError && (
+            <ErrorState error={impactError} message="Impact analysis request failed." />
+          )}
+
+          {!impactLoading && !impactError && impact && (
+            <>
+              {/* Summary bar */}
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <Card style={{ flex: 1, minWidth: '200px' }}>
+                  <p className="eyebrow">Rule</p>
+                  <div style={{ fontFamily: 'monospace', fontSize: '13px', marginTop: '4px', color: 'var(--muted)' }} data-testid="summary-rule-id">
+                    {impact.rule?.id}
+                  </div>
+                  {isChanged ? (
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span
+                        style={{ fontFamily: 'monospace', fontSize: '13px', color: 'var(--text)', background: 'var(--bg)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border)' }}
+                        data-testid="old-expression"
+                      >
+                        {impact.rule?.oldExpression}
+                      </span>
+                      <span style={{ color: 'var(--muted)' }}>→</span>
+                      <span
+                        style={{ fontFamily: 'monospace', fontSize: '13px', color: 'var(--accent)', background: 'var(--bg)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--accent)' }}
+                        data-testid="new-expression"
+                      >
+                        {impact.rule?.newExpression}
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--muted)' }} data-testid="unchanged-notice">
+                      No change from current expression.
+                    </div>
+                  )}
+                </Card>
+
+                <Card style={{ minWidth: '180px' }}>
+                  <p className="eyebrow">Risk</p>
+                  <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <Badge status={riskToBadgeStatus(impact.risk?.level)} data-testid="risk-badge">
+                      {impact.risk?.level ?? 'UNKNOWN'}
+                    </Badge>
+                    <span style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.5 }} data-testid="risk-reason">
+                      {impact.risk?.reason}
+                    </span>
+                  </div>
+                </Card>
+
+                <Card style={{ flex: 2, minWidth: '260px' }}>
+                  <p className="eyebrow">Affected components</p>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                    {impact.affected_nodes.map(n => (
+                      <span key={n} className="pill" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}>{n}</span>
+                    ))}
+                    {impact.affected_files.map(f => (
+                      <span key={f} className="pill" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}>{f}</span>
+                    ))}
+                    {impact.affected_tests.map(t => (
+                      <span key={t} className="pill" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}>{t}</span>
+                    ))}
+                    {impact.affected_docs.map(d => (
+                      <span key={d} className="pill" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}>{d}</span>
+                    ))}
+                    {impact.affected_nodes.length === 0 &&
+                      impact.affected_files.length === 0 &&
+                      impact.affected_tests.length === 0 &&
+                      impact.affected_docs.length === 0 && (
+                        <span style={{ fontSize: '13px', color: 'var(--muted)' }}>No registered dependencies found.</span>
+                      )}
+                  </div>
+                </Card>
+              </div>
+
+              {/* Evaluation result */}
+              {impact.evaluation && (
+                <Card>
+                  <p className="eyebrow">Before / After evaluation</p>
+                  <div style={{ display: 'flex', gap: '24px', marginTop: '8px', flexWrap: 'wrap' }}>
+                    <div>
+                      <span style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Input</span>
+                      <code style={{ fontSize: '13px' }} data-testid="eval-input">{JSON.stringify(impact.evaluation.input)}</code>
+                    </div>
+                    {impact.evaluation.before != null && (
+                      <div>
+                        <span style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Before</span>
+                        <code style={{ fontSize: '13px' }} data-testid="eval-before">{impact.evaluation.before}</code>
+                      </div>
+                    )}
+                    {impact.evaluation.after != null && (
+                      <div>
+                        <span style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>After</span>
+                        <code style={{ fontSize: '13px' }} data-testid="eval-after">{impact.evaluation.after}</code>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+
+              {/* Propagation graph */}
+              <section style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px', height: '520px' }}>
+                <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', overflow: 'hidden' }}>
+                  <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    nodeTypes={nodeTypes}
+                    edgeTypes={edgeTypes}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onNodeClick={onNodeClick}
+                    fitView
+                    minZoom={0.4}
+                    maxZoom={1.5}
+                  >
+                    <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+                    <Controls />
+                  </ReactFlow>
+                </div>
+
+                <Card>
+                  {selectedNodeData ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div>
+                        <span style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Node Inspector</span>
+                        <h3 style={{ fontSize: '18px', marginTop: '8px', color: 'var(--accent)', margin: 0 }}>{selectedNodeData.label}</h3>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div>
+                          <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Name</label>
+                          <div style={{ fontSize: '14px', fontWeight: 500 }}>{selectedNodeData.title}</div>
+                        </div>
+                        {selectedNodeData.metrics && (
+                          <div>
+                            <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Severity</label>
+                            <div style={{ fontSize: '14px', fontWeight: 600 }}>{selectedNodeData.metrics}</div>
+                          </div>
+                        )}
+                        <div>
+                          <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '4px' }}>Reason</label>
+                          <div style={{ fontSize: '13px', lineHeight: 1.5 }}>{selectedNodeData.description}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--muted)', fontSize: '14px', textAlign: 'center' }}>
+                      Select a node in the graph<br />to view propagation impact
+                    </div>
+                  )}
+                </Card>
+              </section>
+            </>
+          )}
+        </section>
+      )}
+
+      {/* Initial state — no expression submitted yet */}
+      {!submittedExpression && (
+        <div style={{ marginTop: '32px' }}>
+          <EmptyState
+            title="No analysis run yet"
+            description="Enter a proposed rule expression above and click Analyze Impact to see how a change propagates through the system."
+          />
+        </div>
+      )}
     </PageContainer>
   );
 }

@@ -1,13 +1,13 @@
-import type { Project, WorkflowGraph, ImpactAnalysisResult, Build, BobActivityEvent, BobSubagent, CodeDiff, SecurityResult, TestRun, ReviewSummary } from '../types';
+import type { Project, WorkflowGraph, Build, BobActivityEvent, BobSubagent, CodeDiff, SecurityResult, TestRun, ReviewSummary } from '../types';
 import type { AsyncJobResponse, JobResult, ImpactAnalysisResponse, BuildChangesResponse } from './types';
 
 export interface ApiService {
   // Dashboard & Activity & Rule Management & Execution (API Contract Gaps)
-  getDashboardStats(): Promise<{ totalWorkflows: number, activeWorkflows: number, pendingTasks: number, bobChanges: number }>;
-  getActivity(): Promise<Array<{ id: string, title: string, source: string, timestamp: string }>>;
+  getDashboardStats(projectId: string): Promise<{ totalWorkflows: number, activeWorkflows: number, pendingTasks: number, bobChanges: number }>;
+  getActivity(projectId: string): Promise<Array<{ id: string, title: string, source: string, timestamp: string, event_type?: string, message?: string }>>;
   changeRule(ruleId: string, updates: any): Promise<void>;
   getWorkflowExecution(workflowId: string): Promise<any>;
-  getDocumentation(workflowId: string): Promise<any>;
+  getDocumentation(buildId: string): Promise<DocumentationArtifact[]>;
 
   // Projects
   getProjects(): Promise<Project[]>;
@@ -29,7 +29,7 @@ export interface ApiService {
   runSecurityScan(buildId: string): Promise<AsyncJobResponse>;
 
   // Impact Analysis
-  analyzeRuleImpact(ruleId: string, expression?: string): Promise<ImpactAnalysisResult | ImpactAnalysisResponse>;
+  analyzeRuleImpact(ruleId: string, expression: string): Promise<ImpactAnalysisResponse>;
 
   // Reviews
   approveReview(id: string): Promise<boolean>;
@@ -43,4 +43,13 @@ export interface ApiService {
   getSecurityResult(buildId: string): Promise<SecurityResult>;
   getTests(workflowId: string): Promise<TestRun[]>;
   getReviewSummary(workflowId: string): Promise<ReviewSummary>;
+}
+
+export interface DocumentationArtifact {
+  id: string;
+  title: string;
+  content: string;
+  path: string | null;
+  artifact_type: string | null;
+  created_at: string;
 }

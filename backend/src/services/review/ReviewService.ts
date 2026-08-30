@@ -47,11 +47,6 @@ export class ReviewService {
     const latestTestRun = testRuns[0];
     if (latestTestRun.status !== 'PASS') throw new Error('Cannot approve: tests did not pass');
 
-    // Verify docs exist
-    const docs = await db.selectFrom('documentation_artifacts').where('build_id', '=', review.build_id).selectAll().execute();
-    if (docs.length === 0) throw new Error('Cannot approve: documentation missing');
-
-    // Verify SecurePush was PASS or WARN — BLOCK is a hard gate
     const secureScan = await db.selectFrom('security_scans').where('build_id', '=', review.build_id).selectAll().executeTakeFirst();
     if (!secureScan) {
       throw Object.assign(new Error('Cannot approve: SecurePush scan not completed'), { code: 'SECURITY_SCAN_REQUIRED', statusCode: 400 });
@@ -61,6 +56,30 @@ export class ReviewService {
         new Error(`Cannot approve: SecurePush BLOCKED changes. Risk score: ${secureScan.risk_score ?? 'unknown'}/100. Fix critical findings first.`),
         { code: 'APPROVAL_BLOCKED', statusCode: 403 }
       );
+    }
+
+    // Verify docs exist
+    const docs = await db.selectFrom('documentation_artifacts').where('build_id', '=', review.build_id).selectAll().execute();
+    if (docs.length === 0) throw new Error('Cannot approve: documentation missing');
+
+    const plan = await db.selectFrom('build_plans').where('build_id', '=', review.build_id).selectAll().executeTakeFirst();
+    if (!plan) throw new Error('Cannot approve: implementation plan missing');
+    const changes = await db.selectFrom('build_changes').where('build_id', '=', review.build_id).selectAll().execute();
+    if (changes.length === 0 || changes.every(change => !change.diff?.trim())) {
+      throw new Error('Cannot approve: Bob repository change evidence missing');
+    }
+    const bobActivity = await db.selectFrom('bob_activity_events')
+      .where('build_id', '=', review.build_id)
+      .select('id')
+      .executeTakeFirst();
+    if (!bobActivity) throw new Error('Cannot approve: Bob activity evidence missing');
+
+    // Verify SecurePush was PASS or WARN — BLOCK is a hard gate
+    if (!secureScan.completed_at || secureScan.findings === null || secureScan.findings === undefined) {
+      throw Object.assign(new Error('Cannot approve: SecurePush scan evidence is incomplete'), { code: 'SECURITY_SCAN_REQUIRED', statusCode: 400 });
+    }
+    if (secureScan.status !== 'PASS' && secureScan.status !== 'WARN') {
+      throw Object.assign(new Error(`Cannot approve: SecurePush scan status is ${secureScan.status}`), { code: 'SECURITY_SCAN_REQUIRED', statusCode: 400 });
     }
 
     // Verify blueprint valid

@@ -1,3 +1,4 @@
+import { useParams } from 'react-router-dom';
 import { PageHeader } from '../components/PageHeader';
 import { Badge } from '../components/Badge';
 import { Card } from '../components/Card';
@@ -7,9 +8,11 @@ import { TestResult } from '../components/build/TestResult';
 import { LoadingState, ErrorState } from '../components/States';
 
 export function TestsPage() {
-  const { data: tests = [], isLoading, error } = useTests('w_1043');
+  const { id = '0bc69865-15e0-4f30-af96-6227abee5e6c' } = useParams();
+  const { data: tests = [], isLoading, error } = useTests(id);
 
-  const totalDisplay = 27; // Request specifically asked for 27/27
+  const totalPassed = tests.reduce((total, test) => total + (test.status === 'Passed' ? 1 : 0), 0);
+  const totalDisplay = tests.length;
 
   if (isLoading) {
     return (
@@ -48,7 +51,7 @@ export function TestsPage() {
         
         <aside style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
-            <h1 style={{ fontSize: '36px', color: 'var(--success)', margin: 0 }}>{totalDisplay} / {totalDisplay}</h1>
+            <h1 style={{ fontSize: '36px', color: 'var(--success)', margin: 0 }}>{totalPassed} / {totalDisplay}</h1>
             <p style={{ color: 'var(--muted)', marginTop: '8px', margin: 0 }}>Tests Passed</p>
           </Card>
 

@@ -34,11 +34,13 @@ export class BlueprintService {
       .executeTakeFirst();
 
     if (existingBlueprint) {
-      return {
-        blueprint: existingBlueprint.schema_json as unknown as AutomationBlueprint,
-        status: existingBlueprint.validation_status,
-        errors: (existingBlueprint.validation_errors as string[]) || []
-      };
+      if (existingBlueprint.validation_status === 'VALID') {
+        return {
+          blueprint: existingBlueprint.schema_json as unknown as AutomationBlueprint,
+          status: existingBlueprint.validation_status,
+          errors: (existingBlueprint.validation_errors as string[]) || []
+        };
+      }
     }
 
     // 3. Generate Blueprint
@@ -92,7 +94,13 @@ export class BlueprintService {
     
     const engineNodes = graphData.nodes.map(n => ({
       id: n.id,
-      type: n.kind,
+      type: n.kind === 'TRIGGER'
+        ? 'START'
+        : n.kind === 'DECISION'
+          ? 'DECISION'
+          : n.kind === 'TERMINAL'
+            ? 'TERMINAL'
+            : 'INTERMEDIATE',
       label: n.label,
       automated: n.type === 'automated',
       inputs: {},
@@ -126,15 +134,40 @@ export class BlueprintService {
     const status = validationResult.isValid ? 'VALID' : 'INVALID';
 
     // 5. Persist
-    await db
-      .insertInto('blueprints')
-      .values({
-        workflow_version_id: versionId,
-        schema_json: generatedBlueprint,
-        validation_status: status,
-        validation_errors: JSON.stringify(validationResult.errors)
-      })
-      .execute();
+    if (existingBlueprint) {
+      await db
+        .updateTable('blueprints')
+        .set({
+          schema_json: generatedBlueprint,
+          validation_status: status,
+          validation_errors: JSON.stringify(validationResult.errors)
+        })
+        .where('id', '=', existingBlueprint.id)
+        .execute();
+    } else {
+      await db
+        .insertInto('blueprints')
+        .values({
+          workflow_version_id: versionId,
+          schema_json: generatedBlueprint,
+          validation_status: status,
+          validation_errors: JSON.stringify(validationResult.errors)
+        })
+        .execute();
+    }
+
+    await db.insertInto('activity_events').values({
+      id: `blueprint-created-${versionId}`,
+      title: 'Blueprint Created',
+      message: `Blueprint created for workflow version ${versionId}`,
+      source: 'BLUEPRINT',
+      event_type: 'BLUEPRINT_CREATED',
+      status: 'SUCCESS',
+      workflow_version: versionId,
+      entity_type: 'BLUEPRINT',
+      entity_id: versionId,
+      metadata: { validationStatus: status }
+    }).execute();
 
     return {
       blueprint: generatedBlueprint,

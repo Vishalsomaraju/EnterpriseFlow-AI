@@ -8,47 +8,27 @@ interface RouteRule {
   threshold?: number;
 }
 
-/**
- * BASELINE WorkflowRouter — deliberately imperfect.
- *
- * Known deficiencies Bob must fix:
- * 1. Routing rules are hardcoded — should be loaded from rules.json
- * 2. No dynamic rule evaluation (rules cannot be updated without code change)
- * 3. No fallback routing when assignee is unavailable
- * 4. No logging of routing decisions
- */
 export class WorkflowRouter {
-  // KNOWN DEFICIENCY: Hardcoded routing table — Bob should replace with dynamic rules.json evaluation
-  private static readonly ROUTES: RouteRule[] = [
-    { condition: 'amount >= threshold', assignTo: 'CFO' },
-    { condition: 'amount < threshold', assignTo: 'Finance Manager' },
-  ];
-
-  route(invoice: Invoice, processingResult: ProcessingResult): string {
-    // KNOWN DEFICIENCY: Simply echoes what InvoiceProcessor already decided
-    // A real router should evaluate rules independently from a config source
-    return processingResult.assignTo;
+  route(invoice: Invoice, _processingResult?: ProcessingResult): string {
+    const threshold = this.readRules().approvalThreshold;
+    return invoice.amount >= threshold ? 'CFO' : 'Finance Manager';
   }
 
   getAvailableRoutes(): RouteRule[] {
-    return WorkflowRouter.ROUTES;
+    const threshold = this.readRules().approvalThreshold;
+    return [
+      { condition: `amount >= ${threshold}`, assignTo: 'CFO', threshold },
+      { condition: `amount < ${threshold}`, assignTo: 'Finance Manager', threshold },
+    ];
   }
 
-  /**
-   * KNOWN DEFICIENCY: This method exists but is never called by route().
-   * Bob should integrate dynamic rule loading into the routing logic.
-   */
   loadDynamicRules(): RouteRule[] {
-    try {
-      const rulesPath = join(__dirname, '../config/rules.json');
-      const rules = JSON.parse(readFileSync(rulesPath, 'utf-8'));
-      return [
-        { condition: `amount >= ${rules.approvalThreshold}`, assignTo: 'CFO', threshold: rules.approvalThreshold },
-        { condition: `amount < ${rules.approvalThreshold}`, assignTo: 'Finance Manager', threshold: rules.approvalThreshold },
-      ];
-    } catch {
-      return WorkflowRouter.ROUTES;
-    }
+    return this.getAvailableRoutes();
+  }
+
+  private readRules(): { approvalThreshold: number } {
+    const rulesPath = join(__dirname, '../config/rules.json');
+    return JSON.parse(readFileSync(rulesPath, 'utf-8')) as { approvalThreshold: number };
   }
 }
 

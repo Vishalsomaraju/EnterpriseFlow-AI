@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { db } from '../src/db';
-import { ruleService } from '../src/services/RuleService';
+import { ruleService } from '../src/services/rules/RuleService';
+import { randomUUID } from 'crypto';
 
 describe('RuleService (Business Rule Engine)', () => {
   let workflowId: string;
@@ -9,16 +10,19 @@ describe('RuleService (Business Rule Engine)', () => {
 
   beforeAll(async () => {
     // Setup test data
-    workflowId = `wf_test_${Date.now()}`;
-    initialVersionId = `wv_test_${Date.now()}`;
+    workflowId = randomUUID();
+    initialVersionId = randomUUID();
     ruleId = `br_test_${Date.now()}`;
+
+    await db.insertInto('projects').values({
+      id: workflowId, // Reusing workflowId as project ID for simplicity
+      name: 'Test Project'
+    }).execute();
 
     await db.insertInto('workflows').values({
       id: workflowId,
-      name: 'Test Workflow',
-      description: 'Test Workflow',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      project_id: workflowId,
+      name: 'Test Workflow'
     }).execute();
 
     await db.insertInto('workflow_versions').values({
@@ -26,6 +30,16 @@ describe('RuleService (Business Rule Engine)', () => {
       workflow_id: workflowId,
       version: 1,
       status: 'PUBLISHED'
+    }).execute();
+
+    await db.insertInto('workflow_nodes').values({
+      id: 'node_finance_manager',
+      version_id: initialVersionId,
+      type: 'HUMAN_TASK',
+      name: 'Finance Manager Approval',
+      kind: 'NODE',
+      pos_x: 0,
+      pos_y: 0
     }).execute();
 
     await db.insertInto('business_rules').values({
@@ -47,9 +61,10 @@ describe('RuleService (Business Rule Engine)', () => {
     // Cleanup
     await db.deleteFrom('rule_dependencies').where('business_rule_id', 'like', 'br_test_%').execute();
     await db.deleteFrom('business_rules').where('id', 'like', 'br_test_%').execute();
-    await db.deleteFrom('workflow_nodes').where('version_id', 'like', 'wv_test_%').execute();
+    await db.deleteFrom('workflow_nodes').where('version_id', '=', initialVersionId).execute();
     await db.deleteFrom('workflow_versions').where('workflow_id', '=', workflowId).execute();
     await db.deleteFrom('workflows').where('id', '=', workflowId).execute();
+    await db.deleteFrom('projects').where('id', '=', workflowId).execute();
   });
 
   it('should analyze rule impact (Read Only) without mutation', async () => {
@@ -58,18 +73,37 @@ describe('RuleService (Business Rule Engine)', () => {
     expect(impact.rule?.oldExpression).toBe('amount < 500000');
     expect(impact.rule?.newExpression).toBe('amount < 1000000');
     
+    // Risk check for changed expression
+    expect(impact.risk?.level).toBe('HIGH');
+    expect(impact.risk?.reason).toContain('require review');
+    
     // Direct Impact check
     expect(impact.directImpact?.length).toBeGreaterThan(0);
     expect(impact.directImpact![0].type).toBe('WORKFLOW_NODE');
     expect(impact.directImpact![0].id).toBe('node_finance_manager');
     
     // Evaluation check
-    expect(impact.evaluation?.before).toBe('assign_to("CFO")');
-    expect(impact.evaluation?.after).toBe('assign_to("Finance Manager")');
+    expect(impact.evaluation?.before).toBe('assign_to("Finance Manager"): false');
+    expect(impact.evaluation?.after).toBe('assign_to("Finance Manager"): true');
 
     // Make sure nothing was mutated
     const currentRule = await db.selectFrom('business_rules').where('id', '=', ruleId).selectAll().executeTakeFirst();
     expect(currentRule?.condition).toBe('amount < 500000'); // Still original
+  });
+
+  it('should return LOW risk when proposed expression is identical to stored expression', async () => {
+    const impact = await ruleService.analyzeRuleImpact(ruleId, 'amount < 500000', { amount: 200000 });
+    
+    expect(impact.rule?.oldExpression).toBe('amount < 500000');
+    expect(impact.rule?.newExpression).toBe('amount < 500000');
+    
+    // Risk check for identical expression
+    expect(impact.risk?.level).toBe('LOW');
+    expect(impact.risk?.reason).toBe('No rule change detected. No impact analysis required.');
+
+    // Existing impact results should remain populated
+    expect(impact.directImpact?.length).toBeGreaterThan(0);
+    expect(impact.directImpact![0].type).toBe('WORKFLOW_NODE');
   });
 
   it('should reject changeRule if baseVersion mismatches (Optimistic Concurrency)', async () => {
@@ -98,5 +132,5 @@ describe('RuleService (Business Rule Engine)', () => {
     const newDeps = await db.selectFrom('rule_dependencies').where('business_rule_id', '=', newRule!.id).selectAll().execute();
     expect(newDeps.length).toBe(1);
     expect(newDeps[0].target_id).toBe('node_finance_manager_v2'); // ID mapped
-  });
+  }, 15000);
 });

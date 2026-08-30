@@ -7,7 +7,7 @@ import { useDocumentation } from '../hooks/queries';
 import { LoadingState, ErrorState } from '../components/States';
 
 export function DocumentationPage() {
-  const { id = 'w_1043' } = useParams();
+  const { id = '0bc69865-15e0-4f30-af96-6227abee5e6c' } = useParams();
   const { data: docs, isLoading, error } = useDocumentation(id);
 
   if (isLoading) {
@@ -53,18 +53,11 @@ export function DocumentationPage() {
             </p>
 
             <section style={{ marginBottom: '40px' }}>
-              {docs.endpoints.map((ep: any, idx: number) => (
-                <div key={idx} style={{ marginBottom: '24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                    <span style={{ padding: '4px 8px', background: 'var(--accent-tint)', color: 'var(--accent)', borderRadius: '4px', fontSize: '12px', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{ep.method}</span>
-                    <h3 style={{ fontSize: '16px', fontFamily: 'var(--font-mono)', margin: 0 }}>{ep.path}</h3>
-                  </div>
-                  <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>{ep.desc}</p>
-                  
-                  <h4 style={{ fontSize: '14px', marginBottom: '8px', margin: 0 }}>Request Body</h4>
-                  <pre style={{ background: 'var(--bg)', padding: '16px', borderRadius: '8px', fontSize: '13px', fontFamily: 'var(--font-mono)', border: '1px solid var(--border)', marginTop: '8px', color: 'var(--text)' }}>
-  {ep.body}
-                  </pre>
+              {docs.map((doc) => (
+                <div key={doc.id} style={{ marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '16px', fontFamily: 'var(--font-mono)', margin: 0 }}>{doc.title}</h3>
+                  <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '12px', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{doc.content}</p>
+                  {doc.path && <small style={{ color: 'var(--muted)' }}>{doc.path}</small>}
                 </div>
               ))}
             </section>
@@ -74,9 +67,7 @@ export function DocumentationPage() {
               <p style={{ fontSize: '14px', lineHeight: 1.6, marginTop: '16px', margin: 0 }}>
                 The system utilizes a dual-tier human routing checkpoint. As of the latest change:
                 <br/><br/>
-                {docs.rules.map((rule: any, idx: number) => (
-                  <span key={idx}>• <strong>{rule.condition}</strong>: {rule.action}<br/></span>
-                ))}
+                Documentation artifacts are sourced from the build records returned by the backend.
               </p>
             </section>
           </Card>

@@ -11,7 +11,7 @@ export class DashboardService {
   async getDashboardStats(projectId: string) {
     const totalWorkflowsQuery = await db
       .selectFrom('workflows')
-      .where('project_id', '=', projectId)
+      .where(sql<boolean>`project_id = ${projectId}::uuid`)
       .select((eb) => eb.fn.count<number>('id').as('count'))
       .executeTakeFirst();
     const totalWorkflows = Number(totalWorkflowsQuery?.count || 0);
@@ -19,7 +19,7 @@ export class DashboardService {
     const activeWorkflowsQuery = await db
       .selectFrom('workflows as w')
       .innerJoin('workflow_versions as wv', 'wv.workflow_id', 'w.id')
-      .where('w.project_id', '=', projectId)
+      .where(sql<boolean>`w.project_id = ${projectId}::uuid`)
       .where('wv.status', 'in', ['ACTIVE', 'PUBLISHED'])
       .select((eb) => eb.fn.count<number>('w.id').as('count'))
       .executeTakeFirst();
@@ -29,11 +29,11 @@ export class DashboardService {
     // Let's count jobs related to the project's blueprints/versions.
     const pendingTasksQuery = await db
       .selectFrom('jobs as j')
-      .innerJoin('builds as b', 'b.id', 'j.resource_id')
+      .innerJoin('builds as b', (join) => join.on(sql<boolean>`b.id::text = j.resource_id`))
       .innerJoin('blueprints as bp', 'bp.id', 'b.blueprint_id')
       .innerJoin('workflow_versions as wv', 'wv.id', 'bp.workflow_version_id')
       .innerJoin('workflows as w', 'w.id', 'wv.workflow_id')
-      .where('w.project_id', '=', projectId)
+      .where(sql<boolean>`w.project_id = ${projectId}::uuid`)
       .where('j.status', 'in', ['QUEUED', 'RUNNING'])
       .select((eb) => eb.fn.count<number>('j.id').as('count'))
       .executeTakeFirst();
@@ -45,7 +45,7 @@ export class DashboardService {
       .innerJoin('blueprints as bp', 'bp.id', 'b.blueprint_id')
       .innerJoin('workflow_versions as wv', 'wv.id', 'bp.workflow_version_id')
       .innerJoin('workflows as w', 'w.id', 'wv.workflow_id')
-      .where('w.project_id', '=', projectId)
+      .where(sql<boolean>`w.project_id = ${projectId}::uuid`)
       .select((eb) => eb.fn.count<number>('bc.id').as('count'))
       .executeTakeFirst();
     const bobChanges = Number(bobChangesQuery?.count || 0);
@@ -60,9 +60,22 @@ export class DashboardService {
 
   async getActivity(projectId: string, limit = 50) {
     const activities = await db
-      .selectFrom('activity_events')
-      .selectAll()
-      .where('project_id', '=', projectId)
+      .selectFrom('activity_events as ae')
+      .leftJoin('workflow_versions as wv', (join) => join.on(sql<boolean>`wv.id::text = ae.workflow_version`))
+      .leftJoin('workflows as w', 'w.id', 'wv.workflow_id')
+      .select([
+        'ae.id',
+        'ae.title',
+        'ae.source',
+        'ae.timestamp',
+        'ae.event_type',
+        'ae.message',
+        'ae.actor',
+        'ae.entity_type',
+        'ae.entity_id',
+        'ae.workflow_version'
+      ])
+      .where(sql<boolean>`(ae.project_id = ${projectId}::uuid OR w.project_id = ${projectId}::uuid)`)
       .orderBy('timestamp', 'desc')
       .orderBy('id', 'desc')
       .limit(limit)

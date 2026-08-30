@@ -8,7 +8,7 @@ import { useWorkflowExecution } from '../hooks/queries';
 import { LoadingState, ErrorState } from '../components/States';
 
 export function WorkflowExecutionPage() {
-  const { id = 'w_1043' } = useParams();
+  const { id = '0bc69865-15e0-4f30-af96-6227abee5e6c' } = useParams();
   const { data: execution, isLoading, error } = useWorkflowExecution(id);
 
   if (isLoading) {

@@ -22,7 +22,7 @@ export function buildApp() {
   });
 
   app.register(cors, {
-    origin: '*',
+    origin: config.server.corsOrigin,
   });
 
   app.setErrorHandler(errorHandler);

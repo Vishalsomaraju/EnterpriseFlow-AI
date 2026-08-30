@@ -8,17 +8,19 @@ export function useProjects() {
   });
 }
 
-export function useDashboardStats() {
+export function useDashboardStats(projectId?: string) {
   return useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: () => api.getDashboardStats(),
+    queryKey: ['dashboard', 'stats', projectId],
+    queryFn: () => api.getDashboardStats(projectId!),
+    enabled: !!projectId,
   });
 }
 
-export function useActivity() {
+export function useActivity(projectId?: string) {
   return useQuery({
-    queryKey: ['dashboard', 'activity'],
-    queryFn: () => api.getActivity(),
+    queryKey: ['dashboard', 'activity', projectId],
+    queryFn: () => api.getActivity(projectId!),
+    enabled: !!projectId,
   });
 }
 
@@ -41,8 +43,8 @@ export function useBuildChanges(id: string) {
 export function useImpactAnalysis(ruleId: string, expression?: string) {
   return useQuery({
     queryKey: ['impact', ruleId, expression],
-    queryFn: () => api.analyzeRuleImpact(ruleId, expression),
-    enabled: !!ruleId,
+    queryFn: () => api.analyzeRuleImpact(ruleId, expression!),
+    enabled: Boolean(ruleId && expression?.trim()),
   });
 }
 

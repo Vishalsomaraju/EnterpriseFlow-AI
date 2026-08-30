@@ -11,14 +11,14 @@ import { useRuleChangeMutation } from '../hooks/mutations';
 import { LoadingState, ErrorState } from '../components/States';
 
 export function BlueprintPage() {
-  const { id = 'w_1043' } = useParams();
+  const { id = '0bc69865-15e0-4f30-af96-6227abee5e6c' } = useParams();
   const [activeTab, setActiveTab] = useState('Overview');
   const [editingRule, setEditingRule] = useState(false);
   const [ruleAmount, setRuleAmount] = useState('5,00,000');
   const [ruleAction, setRuleAction] = useState('CFO Approval');
   const [ruleChanged, setRuleChanged] = useState(false);
 
-  const { isLoading, error } = useWorkflowGraph(id);
+  const { data: graph, isLoading, error } = useWorkflowGraph(id);
   const { mutate: changeRule, isPending: isChangingRule } = useRuleChangeMutation(id);
 
   if (isLoading) {
@@ -40,7 +40,11 @@ export function BlueprintPage() {
   }
 
   const handleSaveRule = () => {
-    changeRule({ ruleId: 'R-001', updates: { amount: ruleAmount, action: ruleAction } }, {
+    const amount = Number(ruleAmount.replace(/,/g, ''));
+    const rule = graph?.rules.find((candidate) => candidate.action?.includes('CFO')) || graph?.rules[0];
+    if (!rule || !Number.isFinite(amount) || amount <= 0) return;
+
+    changeRule({ ruleId: rule.id, updates: { baseVersion: 1, expression: `amount >= ${amount}` } }, {
       onSuccess: () => {
         setEditingRule(false);
         setRuleChanged(true);
@@ -59,7 +63,7 @@ export function BlueprintPage() {
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <Badge status="COMPLETED">Ready for Engineering</Badge>
             <Button variant="secondary">Edit Blueprint</Button>
-            <Link to="/app/workflows/w_1043/build">
+            <Link to={`/app/workflows/${id}/build`}>
               <Button>Send to Bob <ArrowRight size={16} style={{ marginLeft: '8px' }} /></Button>
             </Link>
           </div>
@@ -197,7 +201,7 @@ export function BlueprintPage() {
                     </ul>
                   </div>
                   <div style={{ marginTop: '24px' }}>
-                    <Link to="/app/workflows/w_1043/impact">
+                    <Link to={`/app/workflows/${id}/impact`}>
                       <Button>View Impact</Button>
                     </Link>
                   </div>

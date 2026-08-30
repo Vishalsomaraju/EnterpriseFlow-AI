@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { PageHeader } from '../components/PageHeader';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -6,13 +6,14 @@ import { Card } from '../components/Card';
 import { PageContainer } from '../components/layout/PageContainer';
 
 export function WorkflowAnalysisPage() {
+  const { id = '0bc69865-15e0-4f30-af96-6227abee5e6c' } = useParams();
   return (
     <PageContainer variant="wide">
-      <PageHeader 
-        eyebrow="Analyze" 
+      <PageHeader
+        eyebrow="Analyze"
         title="Extraction Results"
         actions={
-          <Link to="/app/workflows/w_1043/graph">
+          <Link to={`/app/workflows/${id}/graph`}>
             <Button>View Workflow Graph</Button>
           </Link>
         }

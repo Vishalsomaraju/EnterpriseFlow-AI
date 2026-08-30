@@ -50,7 +50,20 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
     try {
       const build = await db.selectFrom('builds').where('id', '=', request.params.id).selectAll().executeTakeFirst();
       if (!build) return reply.status(404).send({ error: 'Not found' });
-      return reply.send(build);
+      const blueprint = await db.selectFrom('blueprints').where('id', '=', build.blueprint_id).selectAll().executeTakeFirst();
+      const version = blueprint
+        ? await db.selectFrom('workflow_versions').where('id', '=', blueprint.workflow_version_id).selectAll().executeTakeFirst()
+        : undefined;
+      return reply.send({
+        ...build,
+        workflowId: version?.workflow_id || null,
+        stages: [
+          { id: 'blueprint', name: 'Blueprint Validated', status: ['WAITING_FOR_BOB', 'CHANGES_RECEIVED', 'TESTING', 'VALIDATED', 'READY_FOR_REVIEW', 'ACTIVATED'].includes(build.status) ? 'COMPLETED' : 'ACTIVE' },
+          { id: 'bob', name: 'Bob Implementation', status: ['CHANGES_RECEIVED', 'TESTING', 'VALIDATED', 'READY_FOR_REVIEW', 'ACTIVATED'].includes(build.status) ? 'COMPLETED' : build.status === 'WAITING_FOR_BOB' ? 'ACTIVE' : 'PENDING' },
+          { id: 'validation', name: 'Tests & Security', status: ['VALIDATED', 'READY_FOR_REVIEW', 'ACTIVATED'].includes(build.status) ? 'COMPLETED' : build.status === 'TESTING' ? 'ACTIVE' : build.status === 'FAILED' ? 'FAILED' : 'PENDING' },
+          { id: 'review', name: 'Human Review', status: build.status === 'ACTIVATED' ? 'COMPLETED' : build.status === 'READY_FOR_REVIEW' ? 'ACTIVE' : 'PENDING' },
+        ],
+      });
     } catch (err) {
       return reply.status(500).send({ error: 'INTERNAL_ERROR' });
     }
@@ -185,13 +198,42 @@ export const buildRoutes: FastifyPluginAsync = async (app) => {
 
   app.get<{ Params: { id: string } }>('/:id/review', async (request, reply) => {
     try {
-      const review = await db.selectFrom('reviews')
-        .where('build_id', '=', request.params.id)
-        .orderBy('created_at', 'desc')
+      const build = await db.selectFrom('builds')
+        .where('id', '=', request.params.id)
         .selectAll()
         .executeTakeFirst();
-      
-      return reply.send(review || null);
+      if (!build) return reply.status(404).send({ error: 'Build not found' });
+
+      const [review, changes, testRun, security, blueprint] = await Promise.all([
+        db.selectFrom('reviews').where('build_id', '=', request.params.id).orderBy('created_at', 'desc').selectAll().executeTakeFirst(),
+        db.selectFrom('build_changes').where('build_id', '=', request.params.id).selectAll().execute(),
+        db.selectFrom('test_runs').where('build_id', '=', request.params.id).orderBy('completed_at', 'desc').selectAll().executeTakeFirst(),
+        db.selectFrom('security_scans').where('build_id', '=', request.params.id).orderBy('id', 'desc').selectAll().executeTakeFirst(),
+        db.selectFrom('blueprints').where('id', '=', build.blueprint_id).selectAll().executeTakeFirst(),
+      ]);
+
+      let rulesChanged = 0;
+      if (blueprint) {
+        rulesChanged = Number((await db.selectFrom('business_rules')
+          .where('version_id', '=', blueprint.workflow_version_id)
+          .select((eb) => eb.fn.count('id').as('count'))
+          .executeTakeFirst())?.count || 0);
+      }
+
+      const testsPassed = testRun?.passed ?? 0;
+      const testsFailed = testRun?.failed ?? 0;
+      const securityStatus = security?.status || 'NOT_SCANNED';
+
+      return reply.send({
+        review,
+        build: { id: build.id, status: build.status, blueprintId: build.blueprint_id },
+        filesChanged: changes.length,
+        testsPassed,
+        testsFailed,
+        rulesChanged,
+        securityStatus,
+        businessImpact: `${changes.length} file${changes.length === 1 ? '' : 's'} changed; ${testsPassed} test${testsPassed === 1 ? '' : 's'} passed and ${testsFailed} failed; SecurePush status: ${securityStatus}.`,
+      });
     } catch (err) {
       return reply.status(500).send({ error: 'INTERNAL_ERROR' });
     }

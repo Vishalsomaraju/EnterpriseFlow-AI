@@ -1,11 +1,11 @@
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
 import { db } from '../../db/index';
 import { lifecycleOrchestrator } from '../build/LifecycleOrchestrator';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export class TestRunnerService {
   async executeTests(buildId: string): Promise<void> {
@@ -25,60 +25,49 @@ export class TestRunnerService {
     // Capture HEAD hash
     let commitHash = 'unknown';
     try {
-      const { stdout: hashOut } = await execAsync('git rev-parse HEAD', { cwd: repoPath });
+      const { stdout: hashOut } = await execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: repoPath });
       commitHash = hashOut.trim();
-    } catch (e) {
-      // Ignore if not a git repo
+    } catch {
+      commitHash = 'unknown';
     }
 
     let parsedResults: any = null;
-    let exitCode = 0;
-    const testMode = process.env.TEST_MODE || 'demo';
-    const isDemo = testMode === 'demo';
+    let stdout = '';
+    let stderr = '';
+    let exitCode = 1;
+    const isDemo = process.env.TEST_MODE === 'demo';
     
     try {
-      if (isDemo) {
-        // DEMO MODE: deterministic fixture, always passes unless we need negative testing
-        // You could later parameterize this if needed
-        parsedResults = {
-          isDemo: true,
-          mode: 'DEMO',
-          testResults: [
-            {
-              startTime: Date.now(),
-              endTime: Date.now() + 100,
-              assertionResults: [
-                { title: 'DEMO/SIMULATION: generated tests pass', status: 'passed', failureMessages: [] }
-              ]
-            }
-          ]
-        };
-        exitCode = 0;
-      } else {
-        // REAL MODE: actually run the tests
-        const { stdout } = await execAsync('npx vitest run --reporter=json', { cwd: repoPath });
-        parsedResults = JSON.parse(stdout);
-        parsedResults.isDemo = false;
-        parsedResults.mode = 'REAL';
-      }
-    } catch (err: any) {
-      exitCode = err.code || 1;
-      if (err.stdout) {
+      {
         try {
-          parsedResults = JSON.parse(err.stdout);
-          parsedResults.isDemo = false;
-          parsedResults.mode = 'REAL';
-        } catch(e) {
-          // Output was unparseable or just text
+          const result = await execFileAsync(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['vitest', 'run', '--reporter=json'], {
+            cwd: repoPath,
+            windowsHide: true,
+            maxBuffer: 10 * 1024 * 1024,
+          });
+          stdout = result.stdout;
+          stderr = result.stderr;
+          exitCode = 0;
+        } catch (error: any) {
+          stdout = error.stdout || '';
+          stderr = error.stderr || '';
+          exitCode = typeof error.code === 'number' ? error.code : 1;
+        }
+        try {
+          parsedResults = JSON.parse(stdout);
+        } catch {
+          parsedResults = null;
         }
       }
+    } catch (error: any) {
+      stderr = error instanceof Error ? error.message : String(error);
     }
     
     const completedAt = new Date();
     const durationMs = completedAt.getTime() - startedAt.getTime();
     
     let total = 0, passed = 0, failed = 0, skipped = 0;
-    let status = 'TEST_EXECUTION_ERROR';
+    let status = 'FAIL';
     
     if (parsedResults && parsedResults.testResults) {
       parsedResults.testResults.forEach((suite: any) => {
@@ -108,7 +97,9 @@ export class TestRunnerService {
       started_at: startedAt,
       completed_at: completedAt,
       exit_code: exitCode,
-      is_demo: isDemo
+      is_demo: false,
+      stdout,
+      stderr
     }).returning('id').executeTakeFirstOrThrow();
     
     // Persist individual test results

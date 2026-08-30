@@ -1,192 +1,109 @@
 import { db } from '../../db/index';
+import { GraphValidator } from '../../domain/workflow-engine/GraphValidator';
+import { RuleEvaluator } from '../../domain/workflow-engine/RuleEvaluator';
+import { WorkflowExecutionInput } from '../../domain/workflow-engine/ExecutionInputSchema';
 import { randomUUID } from 'crypto';
 
-interface InvoiceData {
-  amount: number;
-  hasPO: boolean;
-  isDuplicate: boolean;
-  [key: string]: any;
-}
-
 export class WorkflowExecutionService {
-  async execute(jobId: string, executionId: string, workflowId: string, versionId: string, inputSnapshot: InvoiceData, idempotencyKey: string) {
+  async execute(jobId: string, executionId: string, workflowId: string, versionId: string, inputSnapshot: WorkflowExecutionInput, _idempotencyKey: string) {
     try {
-      // 1. Fetch Graph
       const nodes = await db.selectFrom('workflow_nodes').where('version_id', '=', versionId).selectAll().execute();
       const edges = await db.selectFrom('workflow_edges').where('version_id', '=', versionId).selectAll().execute();
       const rules = await db.selectFrom('business_rules').where('version_id', '=', versionId).selectAll().execute();
+      const normalizedNodes = nodes.map(node => ({ id: node.id, label: node.name, type: node.type, automated: node.kind === 'automated' }));
+      const normalizedEdges = edges.map(edge => ({
+        id: edge.id, sourceId: edge.source_id, targetId: edge.target_id,
+        condition: edge.label || undefined, type: edge.is_branch ? 'BRANCH' as const : 'DEFAULT' as const
+      }));
+      const validation = GraphValidator.validate(normalizedNodes, normalizedEdges);
+      if (!validation.isValid) throw new Error(`Invalid workflow graph: ${validation.errors.join('; ')}`);
 
-      // Find start node heuristically (no incoming edges, or type 'TRIGGER')
-      // For MVP, if there's no node named 'START', we'll just start at VendorValidation or the first node without incoming edges.
-      const targetIds = new Set(edges.map(e => e.target_id));
-      let currentNode: typeof nodes[0] | undefined = nodes.find(n => !targetIds.has(n.id)) || nodes[0];
+      const incoming = new Set(edges.map(edge => edge.target_id));
+      let currentNode = nodes.find(node => node.type.toUpperCase() === 'TRIGGER') || nodes.find(node => !incoming.has(node.id));
+      if (!currentNode) throw new Error('Graph has no start node');
 
-      if (!currentNode) {
-        throw new Error('Graph is empty or invalid');
-      }
-
-      // Update state to RUNNING
-      await db.updateTable('workflow_executions')
-        .set({ status: 'RUNNING' })
-        .where('id', '=', executionId)
-        .execute();
-
-      // Global activity event
+      await db.updateTable('workflow_executions').set({ status: 'RUNNING' }).where('id', '=', executionId).execute();
       await this.logGlobalEvent(executionId, versionId, 'Workflow Execution Started', `Started execution ${executionId}`, 'WORKFLOW_EXECUTION_STARTED');
 
       let currentStatus = 'RUNNING';
-
-      // 2. Traversal Loop
+      const visited = new Set<string>();
       while (currentNode && currentStatus === 'RUNNING') {
+        if (visited.has(currentNode.id)) throw new Error(`Workflow traversal revisited node ${currentNode.id}`);
+        visited.add(currentNode.id);
         const nodeId: string = currentNode.id;
-        const nodeName: string = currentNode.name;
-        
-        let decision: any = null;
+        const outgoingEdges: typeof edges = edges.filter(edge => edge.source_id === nodeId);
+        const nodeRules = rules.filter(rule => rule.node_id === nodeId);
+        let decision: unknown = null;
         let nextNodeId: string | null = null;
         let nodeStatus = 'COMPLETED';
         let failureReason: string | null = null;
 
-        // Hardcoded simulation logic for specific invoice MVP nodes to satisfy "deterministic invoice workflow execution"
-        // In a real system, the RuleEngine would evaluate the script/condition attached to the node.
-        const lowerName = nodeName.toLowerCase();
-        
-        if (lowerName.includes('duplicate')) {
-          if (inputSnapshot.isDuplicate) {
+        if (nodeRules.length > 0) {
+          const evaluated = nodeRules.map(rule => ({ rule, result: RuleEvaluator.evaluate(rule.condition, inputSnapshot) }));
+          const matched = evaluated.find(item => item.result.matched);
+          if (!matched) {
             nodeStatus = 'FAILED';
             currentStatus = 'FAILED';
-            failureReason = 'Invoice is a duplicate';
-          }
-        } else if (lowerName.includes('po')) {
-          if (!inputSnapshot.hasPO) {
-            nodeStatus = 'FAILED';
-            currentStatus = 'FAILED';
-            failureReason = 'Missing Purchase Order';
-          }
-        } else if (rules.length > 0) {
-          // Rule Engine Simulation
-          // Find the rule associated with this node, or any rule in the graph
-          // We'll evaluate rules to determine the branch
-          const relevantRules = rules; // We evaluate rules to find the branch
-          
-          let routed = false;
-          for (const rule of relevantRules) {
-            const amount = inputSnapshot.amount || 0;
-            let conditionMet = false;
-            
-            // Very naive evaluator for MVP
-            if (rule.condition.includes('< 1000000') && amount < 1000000) conditionMet = true;
-            else if (rule.condition.includes('>= 1000000') && amount >= 1000000) conditionMet = true;
-            else if (rule.condition.includes('< 500000') && amount < 500000) conditionMet = true;
-            else if (rule.condition.includes('>= 500000') && amount >= 500000) conditionMet = true;
-            
-            if (conditionMet) {
-              decision = {
-                ruleId: rule.id,
-                condition: rule.condition,
-                result: true
-              };
-              
-              // Find outgoing edge matching this rule/branch
-              // For MVP, we'll try to find an edge whose label matches the action or we just find the target based on action
-              // Example action: 'assign_to("CFO")'
-              const isCFO = rule.action?.includes('CFO');
-              const outgoingEdges = edges.filter(e => e.source_id === nodeId);
-              
-              const targetEdge = outgoingEdges.find(e => {
-                const targetNode = nodes.find(n => n.id === e.target_id);
-                if (!targetNode) return false;
-                const nodeNameLower = targetNode.name.toLowerCase();
-                return (isCFO && nodeNameLower.includes('cfo')) || (!isCFO && nodeNameLower.includes('manager'));
-              }) || outgoingEdges[0];
-
-              if (targetEdge) {
-                nextNodeId = targetEdge.target_id;
-                routed = true;
-                break;
-              }
+            failureReason = 'No workflow rule matched the supplied input';
+          } else {
+            decision = { ruleId: matched.rule.id, condition: matched.rule.condition, result: matched.result };
+            const actionTarget = matched.rule.action?.match(/["']([^"']+)["']/)?.[1]?.toLowerCase();
+            const targetEdge: (typeof edges)[number] | undefined = outgoingEdges.find(edge =>
+              edge.label && (edge.label.toLowerCase() === matched.rule.condition.toLowerCase() ||
+                Boolean(actionTarget && edge.label.toLowerCase().includes(actionTarget)))
+            );
+            if (targetEdge) nextNodeId = targetEdge.target_id;
+            else if (outgoingEdges.length === 1) nextNodeId = outgoingEdges[0].target_id;
+            else {
+              nodeStatus = 'FAILED';
+              currentStatus = 'FAILED';
+              failureReason = `No edge matches rule ${matched.rule.id}`;
             }
           }
-
-          if (!routed) {
-            // Default to first outgoing edge if no rule matches
-            const outEdges: any[] = edges.filter(e => e.source_id === nodeId);
-            if (outEdges.length > 0) nextNodeId = outEdges[0].target_id;
+        } else if (outgoingEdges.length === 1) {
+          nextNodeId = outgoingEdges[0].target_id;
+        } else if (outgoingEdges.length > 1) {
+          const defaultEdge = outgoingEdges.find(edge => !edge.is_branch && !edge.label);
+          if (defaultEdge) nextNodeId = defaultEdge.target_id;
+          else {
+            nodeStatus = 'FAILED';
+            currentStatus = 'FAILED';
+            failureReason = 'Branching node has no matching rule';
           }
         }
 
-        // Default routing for non-branching nodes
-        if (!nextNodeId && currentStatus !== 'FAILED') {
-          const outEdges: any[] = edges.filter(e => e.source_id === nodeId);
-          if (outEdges.length > 0) nextNodeId = outEdges[0].target_id;
-        }
-
-        // Record History
         await db.insertInto('workflow_execution_history').values({
-          id: randomUUID(),
-          execution_id: executionId,
-          event: nodeName,
-          metadata: {
-            nodeId,
-            nodeName,
-            status: nodeStatus,
-            input: inputSnapshot,
-            decision,
-            nextNodeId,
-            failureReason
-          }
+          id: randomUUID(), execution_id: executionId, event: currentNode.name,
+          metadata: { nodeId, nodeName: currentNode.name, status: nodeStatus, input: inputSnapshot, decision, nextNodeId, failureReason }
         }).execute();
 
         if (currentStatus === 'FAILED') {
-          await db.updateTable('workflow_executions')
-            .set({ status: 'FAILED', completed_at: new Date(), failure_reason: failureReason })
-            .where('id', '=', executionId)
-            .execute();
-          
-          await this.logGlobalEvent(executionId, versionId, 'Workflow Execution Failed', `Failed at ${nodeName}: ${failureReason}`, 'WORKFLOW_EXECUTION_FAILED');
+          await db.updateTable('workflow_executions').set({ status: 'FAILED', completed_at: new Date(), failure_reason: failureReason }).where('id', '=', executionId).execute();
+          await this.logGlobalEvent(executionId, versionId, 'Workflow Execution Failed', `Failed at ${currentNode.name}: ${failureReason}`, 'WORKFLOW_EXECUTION_FAILED');
           break;
         }
-
-        if (nextNodeId) {
-          currentNode = nodes.find(n => n.id === nextNodeId);
-        } else {
-          // Reached end of graph
+        if (!nextNodeId) {
           currentStatus = 'COMPLETED';
-          await db.updateTable('workflow_executions')
-            .set({ status: 'COMPLETED', completed_at: new Date() })
-            .where('id', '=', executionId)
-            .execute();
-
-          await this.logGlobalEvent(executionId, versionId, 'Workflow Execution Completed', `Completed successfully`, 'WORKFLOW_EXECUTION_COMPLETED');
+          await db.updateTable('workflow_executions').set({ status: 'COMPLETED', completed_at: new Date() }).where('id', '=', executionId).execute();
+          await this.logGlobalEvent(executionId, versionId, 'Workflow Execution Completed', 'Completed successfully', 'WORKFLOW_EXECUTION_COMPLETED');
           break;
         }
+        currentNode = nodes.find(node => node.id === nextNodeId);
+        if (!currentNode) throw new Error(`Workflow edge targets missing node ${nextNodeId}`);
       }
-
       await db.updateTable('jobs').set({ status: currentStatus }).where('id', '=', jobId).execute();
-
-    } catch (e: any) {
-      await db.updateTable('workflow_executions')
-        .set({ status: 'FAILED', completed_at: new Date(), failure_reason: e.message })
-        .where('id', '=', executionId)
-        .execute();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await db.updateTable('workflow_executions').set({ status: 'FAILED', completed_at: new Date(), failure_reason: message }).where('id', '=', executionId).execute();
       await db.updateTable('jobs').set({ status: 'FAILED' }).where('id', '=', jobId).execute();
-      
-      await this.logGlobalEvent(executionId, versionId, 'Workflow Execution Error', e.message, 'WORKFLOW_EXECUTION_ERROR');
+      await this.logGlobalEvent(executionId, versionId, 'Workflow Execution Error', message, 'WORKFLOW_EXECUTION_ERROR');
     }
   }
 
   private async logGlobalEvent(executionId: string, versionId: string, title: string, message: string, eventType: string) {
     await db.insertInto('activity_events').values({
-      id: `act_${randomUUID()}`,
-      title,
-      message,
-      source: 'SYSTEM',
-      event_type: eventType,
-      status: 'SUCCESS',
-      actor: 'System',
-      entity_type: 'WORKFLOW_EXECUTION',
-      entity_id: executionId,
-      workflow_version: versionId,
-      metadata: { executionId }
+      id: `act_${randomUUID()}`, title, message, source: 'SYSTEM', event_type: eventType, status: 'SUCCESS',
+      actor: 'System', entity_type: 'WORKFLOW_EXECUTION', entity_id: executionId, workflow_version: versionId, metadata: { executionId }
     }).execute();
   }
 }

@@ -11,9 +11,10 @@ import { useProjects, useDashboardStats, useActivity } from '../hooks/queries';
 import { LoadingState, ErrorState, EmptyState } from '../components/States';
 
 export function Dashboard() {
-  const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats();
   const { data: projects, isLoading: projectsLoading, error: projectsError } = useProjects();
-  const { data: activity, isLoading: activityLoading, error: activityError } = useActivity();
+  const projectId = projects?.[0]?.id;
+  const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats(projectId);
+  const { data: activity, isLoading: activityLoading, error: activityError } = useActivity(projectId);
 
   if (statsLoading || projectsLoading || activityLoading) {
     return (
@@ -118,7 +119,7 @@ export function Dashboard() {
                   <strong style={{ display: 'block', fontSize: '14px' }}>Invoice Approval - Threshold Rule Change</strong>
                   <small style={{ color: 'var(--muted)' }}>Bob has finished tests. Human review required.</small>
                 </div>
-                <Link to="/app/workflows/w_1043/review">
+                <Link to="/app/workflows/0bc69865-15e0-4f30-af96-6227abee5e6c/review">
                   <Button variant="primary" size="sm">Review Change</Button>
                 </Link>
               </div>

@@ -8,10 +8,57 @@ import {
 } from './BobIngestionSchemas';
 import { AppError } from '../../errors/AppError';
 import { lifecycleOrchestrator } from '../../services/build/LifecycleOrchestrator';
+import { bobWorkspaceManager } from '../../services/build/BobWorkspaceManager';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import path from 'path';
+
+const execFileAsync = promisify(execFile);
 
 export class BobEvidenceService {
+  private async validateIdentity(data: { build_id: string; bob_session_id: string }) {
+    const build = await db.selectFrom('builds').where('id', '=', data.build_id).selectAll().executeTakeFirst();
+    if (!build) throw new Error(`Unknown build: ${data.build_id}`);
+
+    const manifest = await bobWorkspaceManager.readManifest(data.build_id);
+    if (manifest.buildId !== data.build_id || manifest.bobSessionId !== data.bob_session_id) {
+      throw new Error('Evidence identity does not match the generated Bob workspace manifest');
+    }
+
+    const blueprint = await db.selectFrom('blueprints').where('id', '=', build.blueprint_id).selectAll().executeTakeFirst();
+    if (!blueprint || blueprint.workflow_version_id !== manifest.workflowVersionId) {
+      throw new Error('Evidence workflow version does not match the build');
+    }
+    return { build, manifest };
+  }
+
+  private async validateRepositoryDiff(
+    repository: string,
+    baselineCommit: string,
+    files: Array<{ file_path: string; diff?: string }>,
+  ): Promise<void> {
+    if (!/^[0-9a-f]{7,64}$/i.test(baselineCommit)) {
+      throw new Error('Bob workspace manifest contains an invalid baseline commit');
+    }
+    for (const file of files) {
+      const relativePath = path.normalize(file.file_path);
+      if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+        throw new Error(`Invalid repository path in Bob changes: ${file.file_path}`);
+      }
+      const { stdout } = await execFileAsync('git', ['diff', '--name-only', baselineCommit, '--', file.file_path], { cwd: repository });
+      if (!stdout.split(/\r?\n/).some((entry) => entry === file.file_path)) {
+        throw new Error(`Bob change is not present in the repository diff: ${file.file_path}`);
+      }
+      const diff = (await execFileAsync('git', ['diff', baselineCommit, '--', file.file_path], { cwd: repository })).stdout;
+      if (!diff.trim()) {
+        throw new Error(`Bob change has no repository diff: ${file.file_path}`);
+      }
+    }
+  }
+
   async processEvent(payload: unknown) {
     const data = BobEventSchema.parse(payload);
+    await this.validateIdentity(data);
     
     await db.transaction().execute(async (trx) => {
       // Idempotency check
@@ -33,21 +80,31 @@ export class BobEvidenceService {
         .execute();
 
       // State derivation
-      if (data.event_type === 'REPOSITORY_ANALYZED') {
-        await trx.updateTable('builds')
-          .set({ status: 'BOB_REPOSITORY_ANALYZED' })
-          .where('id', '=', data.build_id)
-          .where('status', '=', 'WAITING_FOR_BOB')
-          .execute();
+      const statusByEvent: Record<string, string> = {
+        REPOSITORY_ANALYZED: 'ANALYZING',
+        PLAN_CREATED: 'PLANNING',
+        IMPLEMENTING: 'IMPLEMENTING',
+        CHANGES_RECEIVED: 'TESTING',
+        TESTS_RECEIVED: 'TESTING',
+      };
+      const nextStatus = statusByEvent[data.event_type];
+      if (nextStatus) {
+        await trx.updateTable('builds').set({ status: nextStatus }).where('id', '=', data.build_id).execute();
       }
     });
 
     const { EvidenceWriter } = await import('../../services/build/EvidenceWriter');
-    await EvidenceWriter.writeActivity(data.build_id, data);
+    try {
+      await EvidenceWriter.writeActivity(data.build_id, data);
+    } catch (error) {
+      await db.updateTable('builds').set({ status: 'FAILED' }).where('id', '=', data.build_id).execute();
+      throw error;
+    }
   }
 
   async processPlan(payload: unknown) {
     const data = BobPlanSchema.parse(payload);
+    await this.validateIdentity(data);
 
     await db.transaction().execute(async (trx) => {
       // Idempotency based on session
@@ -88,11 +145,18 @@ export class BobEvidenceService {
     });
 
     const { EvidenceWriter } = await import('../../services/build/EvidenceWriter');
-    await EvidenceWriter.writePlan(data.build_id, data);
+    try {
+      await EvidenceWriter.writePlan(data.build_id, data);
+    } catch (error) {
+      await db.updateTable('builds').set({ status: 'FAILED' }).where('id', '=', data.build_id).execute();
+      throw error;
+    }
   }
 
   async processChanges(payload: unknown) {
     const data = BobChangesSchema.parse(payload);
+    const { manifest } = await this.validateIdentity(data);
+    await this.validateRepositoryDiff(manifest.repository, manifest.repositoryCommitHash, data.files);
 
     let shouldTriggerLifecycle = false;
 
@@ -135,18 +199,30 @@ export class BobEvidenceService {
     });
 
     const { EvidenceWriter } = await import('../../services/build/EvidenceWriter');
-    for (const file of data.files) {
-      await EvidenceWriter.writeChange(data.build_id, file);
+    try {
+      for (const file of data.files) await EvidenceWriter.writeChange(data.build_id, file);
+    } catch (error) {
+      await db.updateTable('builds').set({ status: 'FAILED' }).where('id', '=', data.build_id).execute();
+      throw error;
     }
 
     if (shouldTriggerLifecycle) {
       // Defer to LifecycleOrchestrator to take over (SecurePush, Tests, etc)
-      lifecycleOrchestrator.onChangesReceived(data.build_id).catch(console.error);
+      lifecycleOrchestrator.onChangesReceived(data.build_id).catch(async (error) => {
+        await db.updateTable('builds').set({ status: 'FAILED' }).where('id', '=', data.build_id).execute();
+        await db.insertInto('bob_activity_events').values({
+          build_id: data.build_id,
+          event_type: 'LIFECYCLE_FAILED',
+          message: error instanceof Error ? error.message : String(error),
+          metadata: { bob_session_id: data.bob_session_id }
+        }).execute();
+      });
     }
   }
 
   async processTestResults(payload: unknown) {
     const data = BobTestResultSchema.parse(payload);
+    await this.validateIdentity(data);
 
     let shouldTriggerLifecycle = false;
 
@@ -190,16 +266,30 @@ export class BobEvidenceService {
     });
 
     const { EvidenceWriter } = await import('../../services/build/EvidenceWriter');
-    await EvidenceWriter.writeTestRun(data.build_id, data);
+    try {
+      await EvidenceWriter.writeTestRun(data.build_id, data);
+    } catch (error) {
+      await db.updateTable('builds').set({ status: 'FAILED' }).where('id', '=', data.build_id).execute();
+      throw error;
+    }
 
     if (shouldTriggerLifecycle) {
-      lifecycleOrchestrator.onTestsReceived(data.build_id).catch(console.error);
+      lifecycleOrchestrator.onTestsReceived(data.build_id).catch(async (error) => {
+        await db.updateTable('builds').set({ status: 'FAILED' }).where('id', '=', data.build_id).execute();
+        await db.insertInto('bob_activity_events').values({
+          build_id: data.build_id,
+          event_type: 'LIFECYCLE_FAILED',
+          message: error instanceof Error ? error.message : String(error),
+          metadata: { bob_session_id: data.bob_session_id }
+        }).execute();
+      });
     }
   }
 
   async processDocumentation(payload: unknown) {
     const { BobDocumentationSchema } = await import('./BobIngestionSchemas');
     const data = BobDocumentationSchema.parse(payload);
+    await this.validateIdentity(data);
 
     await db.transaction().execute(async (trx) => {
       for (const artifact of data.artifacts) {
@@ -225,8 +315,11 @@ export class BobEvidenceService {
     });
 
     const { EvidenceWriter } = await import('../../services/build/EvidenceWriter');
-    for (const doc of data.artifacts) {
-      await EvidenceWriter.writeDocumentation(data.build_id, doc);
+    try {
+      for (const doc of data.artifacts) await EvidenceWriter.writeDocumentation(data.build_id, doc);
+    } catch (error) {
+      await db.updateTable('builds').set({ status: 'FAILED' }).where('id', '=', data.build_id).execute();
+      throw error;
     }
   }
 }

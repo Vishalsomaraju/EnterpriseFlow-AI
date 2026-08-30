@@ -6,6 +6,8 @@ import type { ApiService } from './service';
 // since MockApi has slightly different return types for ImpactAnalysisResult for now.
 const mockApiAdapter: ApiService = {
   ...MockApi,
+  getDashboardStats: async (_projectId: string) => MockApi.getDashboardStats(),
+  getActivity: async (_projectId: string) => MockApi.getActivity(),
   createProject: async (_name: string) => {},
   extractDocument: async (_id: string) => ({ jobId: 'j1', status: 'EXTRACTING' }),
   getJob: async (_id: string) => ({ status: 'COMPLETED' }),
@@ -15,6 +17,6 @@ const mockApiAdapter: ApiService = {
   runSecurityScan: async (_id: string) => ({ status: 'QUEUED' }),
 } as unknown as ApiService;
 
-const apiMode = import.meta.env.VITE_API_MODE || 'mock';
+const apiMode = import.meta.env.VITE_API_MODE || 'api';
 
-export const api: ApiService = apiMode === 'api' ? realApi : mockApiAdapter;
+export const api: ApiService = apiMode === 'mock' ? mockApiAdapter : realApi;

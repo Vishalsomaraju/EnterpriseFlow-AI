@@ -12,8 +12,8 @@ export function CreateWorkflowPage() {
   const navigate = useNavigate();
 
   const handleAnalyze = () => {
-    // Navigate directly to analysis step for MVP
-    navigate('/app/workflows/w_1043/analysis');
+    // Navigate directly to analysis step for MVP — uses the real workflow ID
+    navigate('/app/workflows/0bc69865-15e0-4f30-af96-6227abee5e6c/analysis');
   };
 
   return (
